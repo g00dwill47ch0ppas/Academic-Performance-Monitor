@@ -1,0 +1,240 @@
+:root {
+    --brand-purple: #4E2A84;
+    --brand-purple-dark: #3a1f63;
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: #2b2b2b;
+    --muted: #6b6b6b;
+    --risk-red: #c0392b;
+    --risk-bg: #fdecea;
+    --success-green: #2e7d32;
+    --border: #e0e0e0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    font-family: "Segoe UI", sans-serif;
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    color: var(--brand-purple);
+    margin-top: 0;
+}
+
+h2 {
+    color: var(--brand-purple-dark);
+    font-size: 1.15rem;
+}
+
+/* Navigation */
+.navbar {
+    background: var(--brand-purple);
+}
+
+.navbar-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.nav-links a {
+    color: #e6dcf7;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 0.95rem;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    color: #fff;
+    border-bottom-color: #fff;
+}
+
+/* Layout */
+.page-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    flex: 1;
+    width: 100%;
+}
+
+.footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 1rem;
+}
+
+/* Cards */
+.card-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    min-width: 180px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card-risk {
+    border-color: var(--risk-red);
+}
+
+.stat-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--brand-purple);
+}
+
+.panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+}
+
+th {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+}
+
+tr.at-risk-row td {
+    background: var(--risk-bg);
+}
+
+/* Forms */
+.inline-form {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.inline-form label {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+input[type="number"],
+input[type="range"],
+select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+button {
+    background: var(--brand-purple);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.45rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+button:hover {
+    background: var(--brand-purple-dark);
+}
+
+/* Flash messages */
+.flash-container {
+    margin-bottom: 1rem;
+}
+
+.flash {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.flash-success {
+    background: #e6f4ea;
+    color: var(--success-green);
+}
+
+.flash-error {
+    background: var(--risk-bg);
+    color: var(--risk-red);
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: normal;
+}
+
+.success-text {
+    color: var(--success-green);
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--brand-purple);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.page-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}

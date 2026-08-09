@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Class Dashboard</h1>
+
+<div class="card-row">
+    <div class="stat-card">
+        <span class="stat-label">Class average (current)</span>
+        <span class="stat-value">{{ class_average }}</span>
+    </div>
+    <div class="stat-card stat-card-risk">
+        <span class="stat-label">At-risk students</span>
+        <span class="stat-value">{{ at_risk_rows|length }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Class size</span>
+        <span class="stat-value">{{ class_size }}</span>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Settings</h2>
+    <form method="post" action="{{ url_for('home.update_threshold') }}" class="inline-form">
+        <label for="threshold">Pass threshold (%)</label>
+        <input type="number" id="threshold" name="threshold" min="0" max="100" step="1"
+               value="{{ threshold }}">
+        <button type="submit">Update</button>
+    </form>
+
+    <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data" class="inline-form">
+        <label for="data_file">Upload class data (.csv or .xlsx)</label>
+        <input type="file" id="data_file" name="data_file" accept=".csv,.xlsx">
+        <button type="submit">Upload</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>At-risk students <span class="muted">(best-case p-mark below threshold)</span></h2>
+    {% if at_risk_rows|length == 0 %}
+        <p class="success-text">No students currently flagged as at-risk.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for row in at_risk_rows|sort(attribute='max_pmark') %}
+                <tr class="at-risk-row">
+                    <td>{{ row.student_code }}</td>
+                    <td>{{ row.current_pmark }}</td>
+                    <td>{{ row.min_pmark }}</td>
+                    <td>{{ row.max_pmark }}</td>
+                    <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h2>Full cohort</h2>
+    <table>
+        <thead>
+            <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th>At-risk</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr class="{{ 'at-risk-row' if row.at_risk else '' }}">
+                <td>{{ row.student_code }}</td>
+                <td>{{ row.current_pmark }}</td>
+                <td>{{ row.min_pmark }}</td>
+                <td>{{ row.max_pmark }}</td>
+                <td>{{ '⚠️ Yes' if row.at_risk else 'No' }}</td>
+                <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

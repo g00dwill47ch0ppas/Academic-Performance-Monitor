@@ -1,0 +1,91 @@
+student_code,assessment_name,weight,mark,completed
+STU001,Class Test 1,0.15,66.1,True
+STU001,Class Test 2,0.15,73.9,True
+STU001,Assignment 1,0.2,82.7,True
+STU001,Assignment 2,0.2,,False
+STU001,Practical,0.15,,False
+STU001,Attendance,0.15,,False
+STU002,Class Test 1,0.15,54.1,True
+STU002,Class Test 2,0.15,72.3,True
+STU002,Assignment 1,0.2,64.2,True
+STU002,Assignment 2,0.2,,False
+STU002,Practical,0.15,,False
+STU002,Attendance,0.15,,False
+STU003,Class Test 1,0.15,58.4,True
+STU003,Class Test 2,0.15,48.3,True
+STU003,Assignment 1,0.2,48.3,True
+STU003,Assignment 2,0.2,,False
+STU003,Practical,0.15,,False
+STU003,Attendance,0.15,,False
+STU004,Class Test 1,0.15,44.5,True
+STU004,Class Test 2,0.15,46.4,True
+STU004,Assignment 1,0.2,58.0,True
+STU004,Assignment 2,0.2,,False
+STU004,Practical,0.15,,False
+STU004,Attendance,0.15,,False
+STU005,Class Test 1,0.15,48.0,True
+STU005,Class Test 2,0.15,35.7,True
+STU005,Assignment 1,0.2,30.7,True
+STU005,Assignment 2,0.2,,False
+STU005,Practical,0.15,,False
+STU005,Attendance,0.15,,False
+STU006,Class Test 1,0.15,79.7,True
+STU006,Class Test 2,0.15,82.7,True
+STU006,Assignment 1,0.2,67.7,True
+STU006,Assignment 2,0.2,,False
+STU006,Practical,0.15,,False
+STU006,Attendance,0.15,,False
+STU007,Class Test 1,0.15,52.9,True
+STU007,Class Test 2,0.15,40.3,True
+STU007,Assignment 1,0.2,55.6,True
+STU007,Assignment 2,0.2,,False
+STU007,Practical,0.15,,False
+STU007,Attendance,0.15,,False
+STU008,Class Test 1,0.15,48.1,True
+STU008,Class Test 2,0.15,45.0,True
+STU008,Assignment 1,0.2,69.5,True
+STU008,Assignment 2,0.2,,False
+STU008,Practical,0.15,,False
+STU008,Attendance,0.15,,False
+STU009,Class Test 1,0.15,49.2,True
+STU009,Class Test 2,0.15,68.0,True
+STU009,Assignment 1,0.2,47.6,True
+STU009,Assignment 2,0.2,,False
+STU009,Practical,0.15,,False
+STU009,Attendance,0.15,,False
+STU010,Class Test 1,0.15,43.5,True
+STU010,Class Test 2,0.15,49.9,True
+STU010,Assignment 1,0.2,65.1,True
+STU010,Assignment 2,0.2,,False
+STU010,Practical,0.15,,False
+STU010,Attendance,0.15,,False
+STU011,Class Test 1,0.15,72.8,True
+STU011,Class Test 2,0.15,69.9,True
+STU011,Assignment 1,0.2,68.1,True
+STU011,Assignment 2,0.2,,False
+STU011,Practical,0.15,,False
+STU011,Attendance,0.15,,False
+STU012,Class Test 1,0.15,30.6,True
+STU012,Class Test 2,0.15,33.2,True
+STU012,Assignment 1,0.2,48.4,True
+STU012,Assignment 2,0.2,,False
+STU012,Practical,0.15,,False
+STU012,Attendance,0.15,,False
+STU013,Class Test 1,0.15,47.5,True
+STU013,Class Test 2,0.15,68.4,True
+STU013,Assignment 1,0.2,61.3,True
+STU013,Assignment 2,0.2,,False
+STU013,Practical,0.15,,False
+STU013,Attendance,0.15,,False
+STU014,Class Test 1,0.15,56.0,True
+STU014,Class Test 2,0.15,60.2,True
+STU014,Assignment 1,0.2,59.2,True
+STU014,Assignment 2,0.2,,False
+STU014,Practical,0.15,,False
+STU014,Attendance,0.15,,False
+STU015,Class Test 1,0.15,44.3,True
+STU015,Class Test 2,0.15,50.7,True
+STU015,Assignment 1,0.2,57.2,True
+STU015,Assignment 2,0.2,,False
+STU015,Practical,0.15,,False
+STU015,Attendance,0.15,,False

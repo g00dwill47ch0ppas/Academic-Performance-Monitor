@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cohort Planning{% endblock %}
+
+{% block content %}
+<h1>Cohort Planning — Weight Optimisation</h1>
+
+<div class="stat-card">
+    <span class="stat-label">Current class average (existing weights)</span>
+    <span class="stat-value">{{ current_class_avg }}</span>
+</div>
+
+<div class="panel">
+    <h2>Algorithm 3 — target class average</h2>
+    <form method="post" class="inline-form">
+        <label for="target_average">Target class average (%)</label>
+        <input type="range" id="target_average" name="target_average" min="0" max="100" step="1"
+               value="{{ target }}" oninput="document.getElementById('target_val').innerText = this.value">
+        <span id="target_val">{{ target }}</span>%
+        <button type="submit">Optimise weights</button>
+    </form>
+
+    {% if error %}
+        <p class="flash flash-error">{{ error }}</p>
+    {% endif %}
+
+    {% if result_rows %}
+        <h3>Proposed weight combination</h3>
+        <table>
+            <thead><tr><th>Assessment</th><th>Current weight</th><th>Proposed weight</th></tr></thead>
+            <tbody>
+                {% for row in result_rows %}
+                <tr>
+                    <td>{{ row.assessment }}</td>
+                    <td>{{ row.current_weight }}</td>
+                    <td>{{ row.proposed_weight }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endblock %}

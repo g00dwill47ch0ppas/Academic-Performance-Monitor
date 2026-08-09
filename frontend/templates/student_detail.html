@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ student.student_code }}{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home.home') }}" class="back-link">&larr; Back to dashboard</a>
+
+<div class="page-header-row">
+    <h1>{{ student.student_code }}</h1>
+    <form method="get" class="inline-form">
+        <label for="student_switch">Switch student</label>
+        <select id="student_switch" onchange="location.href='/student/' + this.value">
+            {% for code in all_codes %}
+                <option value="{{ code }}" {{ 'selected' if code == student.student_code else '' }}>{{ code }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="card-row">
+    <div class="stat-card">
+        <span class="stat-label">Current p-mark</span>
+        <span class="stat-value">{{ student.p_mark_current|round(1) }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Minimum achievable</span>
+        <span class="stat-value">{{ min_pmark }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Maximum achievable</span>
+        <span class="stat-value">{{ max_pmark }}</span>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Assessment breakdown</h2>
+    <table>
+        <thead><tr><th>Assessment</th><th>Weight</th><th>Mark</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for a in student.assessments %}
+            <tr>
+                <td>{{ a.name }}</td>
+                <td>{{ a.weight }}</td>
+                <td>{{ a.mark if a.completed else '—' }}</td>
+                <td>{{ 'completed' if a.completed else 'remaining' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="panel">
+    <h2>Participation Plan (Algorithm 2)</h2>
+    <form method="get" class="inline-form">
+        <label for="target_pct">Target improvement over current p-mark (%)</label>
+        <input type="range" id="target_pct" name="target_pct" min="0" max="50" step="5"
+               value="{{ target_pct }}" oninput="document.getElementById('target_pct_val').innerText = this.value">
+        <span id="target_pct_val">{{ target_pct }}</span>%
+        <button type="submit">Generate plan</button>
+    </form>
+
+    <p class="muted">Target p-mark: ~{{ target_pmark }}</p>
+
+    {% if scenarios|length == 0 %}
+        <p>No remaining assessments to plan for, or target is unreachable within the assumed mark scale.</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    {% for a in student.assessments if not a.completed %}
+                        <th>{{ a.name }}</th>
+                    {% endfor %}
+                    <th>Resulting p-mark</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scenario in scenarios %}
+                <tr>
+                    {% for a in student.assessments if not a.completed %}
+                        <td>{{ scenario[a.name] }}</td>
+                    {% endfor %}
+                    <td>{{ scenario.resulting_pmark }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endblock %}

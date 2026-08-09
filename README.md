@@ -4,7 +4,8 @@ Research artefact for ITRI671 — *Design and Implementation of a Lecturer-Facin
 Decision Support System for At-Risk Student Identification and Academic Performance
 Monitoring*.
 
-**Author:** G. O. G. Sebaetse (46997245) · **Supervisor:** Prof. C. J. Kruger
+**Author:** G. O. G. Sebaetse (46997245) 
+**Supervisor:** Prof. C. J. Kruger
 **Institution:** North-West University, Potchefstroom Campus
 
 This is a research prototype, not a production system. It implements the three

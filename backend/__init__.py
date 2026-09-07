@@ -46,7 +46,8 @@ def create_app():
         return {
             "nav_active_module": data_store.active_module,
             "nav_module_items": [
-                {"code": m.code, "label": m.label} for m in data_store.module_list()
+                {"code": m.code, "name": m.name, "label": m.label}
+                for m in data_store.module_list()
             ],
         }
 

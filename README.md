@@ -25,7 +25,7 @@ reference project.
 
 ```bash
 # 1. Clone and enter the repo
-git clone https://github.com/<your-username>/lecturer-dss.git
+git clone https://github.com/g00dwill47ch0ppas/Academic-Performance-Monitor.git
 cd lecturer-dss
 
 # 2. Create a virtual environment

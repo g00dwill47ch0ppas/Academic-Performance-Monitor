@@ -8,6 +8,7 @@ from io import BytesIO, StringIO
 import pandas as pd
 from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
 
+from backend.algorithms.lp_bounds import compute_pmark_bounds, is_at_risk
 from backend.data.loader import PIIValidationError
 from backend.data.store import DataStore, data_store
 from backend.models.student import Module
@@ -157,6 +158,43 @@ def export_module(code: str):
         mimetype="text/csv",
         as_attachment=True,
         download_name=f"{code}_data.csv",
+    )
+
+
+@module_bp.route("/modules/<code>/summary-export")
+def summary_export(code: str):
+    """Download a per-student summary (p-mark, min/max bounds, at-risk flag)
+    computed with the module's current pass threshold."""
+    module = data_store.modules.get(code)
+    if module is None:
+        flash("Module not found.", "error")
+        return redirect(url_for("modules.list_modules"))
+
+    threshold = module.config.pass_threshold
+    records = []
+    for student in module.students:
+        min_pm, max_pm = compute_pmark_bounds(student.assessments)
+        records.append(
+            {
+                "student_code": student.student_code,
+                "current_pmark": round(student.p_mark_current, 2),
+                "min_pmark": min_pm,
+                "max_pmark": max_pm,
+                "at_risk": is_at_risk(max_pm, threshold),
+            }
+        )
+    df = pd.DataFrame(
+        records,
+        columns=["student_code", "current_pmark", "min_pmark", "max_pmark", "at_risk"],
+    )
+    buffer = StringIO()
+    df.to_csv(buffer, index=False)
+    payload = BytesIO(buffer.getvalue().encode("utf-8"))
+    return send_file(
+        payload,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"{code}_summary.csv",
     )
 
 

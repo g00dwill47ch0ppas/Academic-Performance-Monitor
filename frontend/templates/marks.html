@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Enter marks{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home.students') }}" class="back-link">&larr; Back to students</a>
+
+<div class="page-header-row">
+    <h1>Enter marks</h1>
+    <span class="muted">{{ module.label }}</span>
+</div>
+
+{% if module.assessments %}
+<div class="panel">
+    <h2>1. Choose the assessment</h2>
+    <form method="get" class="inline-form" id="assessment-picker">
+        <label for="assessment">Assessment</label>
+        <select id="assessment" name="assessment" onchange="this.form.submit()">
+            {% for a in module.assessments %}
+                <option value="{{ a.name }}" {{ 'selected' if a.name == selected else '' }}>
+                    {{ a.name }} ({{ (a.weight * 100)|round(1) }}%)
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Choose</button>
+    </form>
+</div>
+
+{% if module.students %}
+<div class="panel">
+    <h2>2. Enter marks for “{{ selected }}”</h2>
+    <p class="muted">Leave a student's mark blank if they haven't written this
+    assessment yet. Marks are out of 100.</p>
+
+    <form method="post" action="{{ url_for('students.bulk_marks') }}">
+        <input type="hidden" name="assessment" value="{{ selected }}">
+        <table>
+            <thead>
+                <tr><th>Student</th><th>Mark</th><th>Previous</th></tr>
+            </thead>
+            <tbody>
+                {% for s in module.students %}
+                {% set entry = module.student_assessment(s, selected) %}
+                <tr>
+                    <td>{{ s.student_code }}</td>
+                    <td>
+                        <input type="number" name="mark_{{ s.student_code }}" min="0" max="100"
+                               step="0.1" placeholder="&mdash;"
+                               value="{{ raws.get('mark_' ~ s.student_code, '') if raws is not none
+                                        else (entry.mark if entry is not none and entry.mark is not none else '') }}">
+                    </td>
+                    <td>
+                        {% if entry is not none and entry.completed %}
+                            <span class="success-text">{{ entry.mark }} &middot; completed</span>
+                        {% else %}
+                            <span class="muted">not yet written</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="row-actions" style="margin-top:1rem">
+            <button type="submit">Save marks for “{{ selected }}”</button>
+        </p>
+    </form>
+</div>
+{% else %}
+<div class="panel">
+    <p class="muted">No students enrolled yet.</p>
+    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+</div>
+{% endif %}
+{% else %}
+<div class="panel">
+    <p class="muted">This module has no assessment plan yet — add assessments first.</p>
+    <a class="btn" href="{{ url_for('modules.plan') }}">Go to assessment plan</a>
+</div>
+{% endif %}
+{% endblock %}

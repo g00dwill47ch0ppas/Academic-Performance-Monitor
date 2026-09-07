@@ -137,6 +137,50 @@ def delete_student(student_code: str):
     return redirect(url_for("home.students"))
 
 
+@students_bp.route("/marks", methods=["GET", "POST"])
+def bulk_marks():
+    """Bulk mark entry: pick one assessment and enter it for the whole class."""
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    names = [a.name for a in module.assessments]
+    if request.method == "POST":
+        name = request.form.get("assessment", "")
+        try:
+            marks = {}
+            for student in module.students:
+                raw = request.form.get(f"mark_{student.student_code}", "").strip()
+                if raw == "":
+                    marks[student.student_code] = None
+                    continue
+                try:
+                    value = float(raw)
+                except ValueError:
+                    raise ValueError(
+                        f"Mark for {student.student_code} must be a number."
+                    ) from None
+                if not 0 <= value <= 100:
+                    raise ValueError(
+                        f"Mark for {student.student_code} must be between 0 and 100."
+                    )
+                marks[student.student_code] = value
+            data_store.set_assessment_marks(module, name, marks)
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template(
+                "marks.html", module=module, selected=name, raws=request.form
+            )
+        flash(f"Marks for '{name}' saved for {len(module.students)} students.", "success")
+        return redirect(url_for("students.bulk_marks", assessment=name))
+
+    selected = request.args.get("assessment")
+    if selected not in names:
+        selected = names[0] if names else ""
+
+    return render_template("marks.html", module=module, selected=selected, raws=None)
+
+
 @students_bp.route("/student/<student_code>")
 def student_detail(student_code: str):
     module, response = active_module_or_redirect()

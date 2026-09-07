@@ -545,3 +545,20 @@ code {
     border-radius: 3px;
     font-size: 0.85em;
 }
+
+/* Keyboard focus visibility (shown only for keyboard/focus-driven interaction) */
+:focus-visible {
+    outline: 3px solid var(--brand-purple);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* On dark purple surfaces the purple ring is invisible — use a white ring. */
+.navbar :focus-visible,
+.module-strip :focus-visible {
+    outline-color: #ffffff;
+}
+
+.module-strip :focus-visible {
+    outline-offset: 1px;
+}

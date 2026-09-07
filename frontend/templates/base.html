@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <nav class="navbar" id="siteNav">
+    <nav class="navbar" id="siteNav" aria-label="Main">
         <div class="navbar-inner">
             <span class="brand">Student Performance Assistant</span>
             <button type="button" class="nav-toggle" id="navToggle"
@@ -26,17 +26,19 @@
                         <span class="nav-section-label">Current module</span>
                         <span class="nav-current-module">{{ nav_active_module.label }}</span>
                         <a href="{{ url_for('home.home') }}"
-                           class="{{ 'active' if request.endpoint == 'home.home' else '' }}">Dashboard</a>
+                           {% if request.endpoint == 'home.home' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
                         <a href="{{ url_for('home.at_risk') }}"
-                           class="{{ 'active' if request.endpoint == 'home.at_risk' else '' }}">At-risk students</a>
+                           {% if request.endpoint == 'home.at_risk' %}class="active" aria-current="page"{% endif %}>At-risk students</a>
                         <a href="{{ url_for('home.students') }}"
-                           class="{{ 'active' if request.endpoint == 'home.students' else '' }}">Students</a>
+                           {% if request.endpoint == 'home.students' %}class="active" aria-current="page"{% endif %}>Students</a>
+                        <a href="{{ url_for('students.bulk_marks') }}"
+                           {% if request.endpoint == 'students.bulk_marks' %}class="active" aria-current="page"{% endif %}>Enter marks</a>
                         <a href="{{ url_for('modules.plan') }}"
-                           class="{{ 'active' if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] else '' }}">Assessment plan</a>
+                           {% if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] %}class="active" aria-current="page"{% endif %}>Assessment plan</a>
                         <a href="{{ url_for('cohort.cohort_planning') }}"
-                           class="{{ 'active' if request.endpoint == 'cohort.cohort_planning' else '' }}">Cohort Planning</a>
+                           {% if request.endpoint == 'cohort.cohort_planning' %}class="active" aria-current="page"{% endif %}>Cohort Planning</a>
                         <a href="{{ url_for('home.settings') }}"
-                           class="{{ 'active' if request.endpoint == 'home.settings' else '' }}">Settings</a>
+                           {% if request.endpoint == 'home.settings' %}class="active" aria-current="page"{% endif %}>Settings</a>
                     {% else %}
                         <span class="nav-section-label">Get started</span>
                         <a href="{{ url_for('modules.list_modules') }}">Create or import a module</a>
@@ -54,7 +56,8 @@
                         </a>
                     {% endfor %}
                     <a href="{{ url_for('modules.list_modules') }}"
-                       class="nav-manage {{ 'active' if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] else '' }}">Manage modules</a>
+                       class="nav-manage {{ 'active' if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] else '' }}"
+                       {% if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] %}aria-current="page"{% endif %}>Manage modules</a>
                 </div>
             </div>
         </div>

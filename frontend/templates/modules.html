@@ -27,7 +27,8 @@
                 {% else %}
                     <a class="btn" href="{{ url_for('modules.activate', code=m.code) }}">Open</a>
                 {% endif %}
-                <a class="btn" href="{{ url_for('modules.export_module', code=m.code) }}">Export CSV</a>
+                <a class="btn" href="{{ url_for('modules.export_module', code=m.code) }}">Export data</a>
+                <a class="btn" href="{{ url_for('modules.summary_export', code=m.code) }}">Export summary</a>
                 <a class="btn" href="{{ url_for('modules.edit_module', code=m.code) }}">Edit</a>
                 <form method="post" action="{{ url_for('modules.delete_module', code=m.code) }}"
                       onsubmit="return confirm('Delete this module and all its students?')">

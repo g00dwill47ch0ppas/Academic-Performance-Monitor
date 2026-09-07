@@ -118,6 +118,30 @@ def _snapshot(module):
     )
 
 
+def test_set_assessment_marks_bulk(store: DataStore):
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+    store.add_student(module, "STU001", [60.0, 50.0])
+    store.add_student(module, "STU002", [None, None])
+
+    store.set_assessment_marks(module, "Test 1", {"STU001": 90.0, "STU002": None})
+
+    stu1 = module.student("STU001")
+    stu2 = module.student("STU002")
+    assert module.student_assessment(stu1, "Test 1").mark == 90.0
+    assert module.student_assessment(stu1, "Test 1").completed is True
+    # STU002's Test 1 was blanked -> now 'not yet written'.
+    assert module.student_assessment(stu2, "Test 1").mark is None
+    assert module.student_assessment(stu2, "Test 1").completed is False
+    # Test 2 untouched, other plans/weights unchanged.
+    assert module.student_assessment(stu1, "Test 2").mark == 50.0
+    assert module.assessment("Test 1").weight == 0.5
+
+    with pytest.raises(ValueError):
+        store.set_assessment_marks(module, "Nope", {"STU001": 1.0})
+
+
 def test_export_round_trips_through_import(store: DataStore):
     """A module serialised to the long CSV format re-imports unchanged."""
     df = load_dataframe(str(SAMPLE_CSV), filename="sample_data.csv")

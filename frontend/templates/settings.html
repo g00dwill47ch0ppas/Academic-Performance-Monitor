@@ -22,9 +22,12 @@
         Currently {{ student_count }} student{{ 's' if student_count != 1 else '' }} and
         {{ assessment_count }} assessment{{ 's' if assessment_count != 1 else '' }}.
     </p>
-    <p>
+    <p class="row-actions">
         <a class="btn" href="{{ url_for('modules.export_module', code=module.code) }}">
             Download {{ module.code }} data (.csv)
+        </a>
+        <a class="btn" href="{{ url_for('modules.summary_export', code=module.code) }}">
+            Download summary (.csv)
         </a>
     </p>
     <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data"

@@ -201,6 +201,26 @@ class DataStore:
     def delete_student(self, module: Module, code: str) -> None:
         module.students = [s for s in module.students if s.student_code != code]
 
+    def set_assessment_marks(
+        self, module: Module, name: str, marks: dict[str, float | None]
+    ) -> None:
+        """Bulk-update one assessment's marks across the module's students.
+
+        ``marks`` maps student codes to their mark (None = not completed).
+        Raises ValueError if the assessment isn't in the plan.
+        """
+        if module.assessment(name) is None:
+            raise ValueError(f"No assessment named '{name}' in this module's plan.")
+        for student in module.students:
+            if student.student_code not in marks:
+                continue
+            entry = module.student_assessment(student, name)
+            if entry is None:
+                continue
+            mark = marks[student.student_code]
+            entry.mark = mark
+            entry.completed = mark is not None
+
     # ------------------------------------------------------------------ #
     # Bulk import (CSV/XLSX) — shared by startup seeding and module import
     # ------------------------------------------------------------------ #

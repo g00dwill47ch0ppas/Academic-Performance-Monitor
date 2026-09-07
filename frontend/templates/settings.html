@@ -5,7 +5,9 @@
 <h1>Settings</h1>
 
 <div class="panel">
-    <h2>Pass threshold</h2>
+    <h2>Pass threshold <span class="muted">({{ module.label }})</span></h2>
+    <p class="muted">A student is flagged at-risk when even their best-case p-mark stays
+    below this threshold.</p>
     <form method="post" action="{{ url_for('home.update_threshold') }}" class="inline-form">
         <label for="threshold">Pass threshold (%)</label>
         <input type="number" id="threshold" name="threshold" min="0" max="100" step="1"
@@ -15,12 +17,27 @@
 </div>
 
 <div class="panel">
-    <h2>Class data</h2>
-    <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data" class="inline-form">
+    <h2>Module data file <span class="muted">({{ module.label }})</span></h2>
+    <p class="muted">
+        Currently {{ student_count }} student{{ 's' if student_count != 1 else '' }} and
+        {{ assessment_count }} assessment{{ 's' if assessment_count != 1 else '' }}.
+    </p>
+    <p>
+        <a class="btn" href="{{ url_for('modules.export_module', code=module.code) }}">
+            Download {{ module.code }} data (.csv)
+        </a>
+    </p>
+    <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data"
+          class="inline-form"
+          onsubmit="return confirm('This replaces the current assessment plan and all students of this module. Continue?')">
         <label for="data_file">Upload class data (.csv or .xlsx)</label>
-        <input type="file" id="data_file" name="data_file" accept=".csv,.xlsx">
-        <button type="submit">Upload</button>
+        <input type="file" id="data_file" name="data_file" accept=".csv,.xlsx" required>
+        <button type="submit">Replace data</button>
     </form>
-    <p class="muted">Replacing the dataset recalculates every page.</p>
+    <p class="muted">
+        Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.
+        Weights are decimal fractions (e.g. 0.2 = 20%). The module code, name and thresholds
+        are kept.
+    </p>
 </div>
 {% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Assessment plan{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <h1>Assessment plan</h1>
+    <span class="muted">Weights are percentages &mdash; total is currently {{ total_weights }}%</span>
+</div>
+
+{% if module.assessments %}
+<div class="panel">
+    <table>
+        <thead>
+            <tr>
+                <th>Assessment</th>
+                <th>Weight (%)</th>
+                <th>Marked</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in module.assessments %}
+            <tr>
+                <td>{{ a.name }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('modules.update_assessment', name=a.name) }}"
+                          class="inline-form weight-form">
+                        <input type="number" name="weight" min="0" max="100" step="0.1"
+                               value="{{ (a.weight * 100)|round(1) }}" required>
+                        <button type="submit">Save</button>
+                    </form>
+                </td>
+                <td>{{ completed_counts[a.name] }}/{{ module.students|length }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('modules.delete_assessment', name=a.name) }}"
+                          onsubmit="return confirm('Remove this assessment from the plan and delete all its marks?')">
+                        <button type="submit" class="btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="muted">
+        Changing a weight recalculates every student's p-mark automatically.
+        Students' marks for removed assessments are deleted.
+    </p>
+</div>
+{% else %}
+<div class="panel">
+    <p>No assessments yet. Add the first one below &mdash; for example "Class Test 1"
+    with a weight of 15%.</p>
+</div>
+{% endif %}
+
+<div class="panel">
+    <h2>Add assessment</h2>
+    <form method="post" action="{{ url_for('modules.add_assessment') }}" class="inline-form">
+        <label for="assessment_name">Assessment name</label>
+        <input type="text" id="assessment_name" name="assessment_name" placeholder="e.g. Class Test 1" required>
+        <label for="weight">Weight (%)</label>
+        <input type="number" id="weight" name="weight" min="0.1" max="100" step="0.1"
+               placeholder="e.g. 15" required>
+        <button type="submit">Add to plan</button>
+    </form>
+    {% if module.assessments and total_weights != 100 %}
+        <p class="muted">Heads-up: weights currently sum to {{ total_weights }}%.
+        You can keep working with a partial plan, but the sum is usually 100%.</p>
+    {% endif %}
+</div>
+{% endblock %}

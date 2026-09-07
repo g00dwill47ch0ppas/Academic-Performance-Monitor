@@ -3,15 +3,23 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from backend.algorithms.lp_bounds import compute_pmark_bounds, is_at_risk
 from backend.data.loader import PIIValidationError
 from backend.data.store import data_store
+from backend.models.student import Module
 
 home_bp = Blueprint("home", __name__)
 
 
-def _cohort_rows():
-    """Build one row per student with p-mark bounds and at-risk flag."""
-    threshold = data_store.config.pass_threshold
+def active_module_or_redirect() -> tuple[Module | None, object | None]:
+    module = data_store.active_module
+    if module is None:
+        return None, redirect(url_for("modules.list_modules"))
+    return module, None
+
+
+def module_rows(module: Module) -> list[dict]:
+    """One summary row per student: p-mark bounds and at-risk flag (best case)."""
+    threshold = module.config.pass_threshold
     rows = []
-    for student in data_store.all_students():
+    for student in module.students:
         min_pm, max_pm = compute_pmark_bounds(student.assessments)
         rows.append(
             {
@@ -27,49 +35,74 @@ def _cohort_rows():
 
 @home_bp.route("/")
 def home():
-    """Overview — headline class statistics."""
-    rows = _cohort_rows()
+    """Overview — headline statistics for the active module."""
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    rows = module_rows(module)
     class_average = round(sum(r["current_pmark"] for r in rows) / len(rows), 1) if rows else 0
     at_risk_count = sum(1 for r in rows if r["at_risk"])
 
     return render_template(
         "overview.html",
+        module=module,
         class_average=class_average,
         at_risk_count=at_risk_count,
         class_size=len(rows),
-        threshold=data_store.config.pass_threshold,
     )
 
 
 @home_bp.route("/at-risk")
 def at_risk():
-    """Students whose best-case p-mark cannot clear the pass threshold."""
-    rows = _cohort_rows()
+    """Students whose best-case p-mark cannot clear the module threshold."""
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    rows = module_rows(module)
     at_risk_rows = [r for r in rows if r["at_risk"]]
 
     return render_template(
         "at_risk.html",
+        module=module,
         at_risk_rows=at_risk_rows,
-        threshold=data_store.config.pass_threshold,
+        threshold=module.config.pass_threshold,
     )
 
 
 @home_bp.route("/students")
 def students():
-    """Full cohort listing with per-student bounds."""
-    return render_template("students.html", rows=_cohort_rows())
+    """Full cohort listing for the active module, with management actions."""
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    return render_template("students.html", module=module, rows=module_rows(module))
 
 
 @home_bp.route("/settings")
 def settings():
-    """Threshold and data upload settings."""
-    return render_template("settings.html", threshold=data_store.config.pass_threshold)
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    return render_template(
+        "settings.html",
+        module=module,
+        threshold=module.config.pass_threshold,
+        student_count=len(module.students),
+        assessment_count=len(module.assessments),
+    )
 
 
 @home_bp.route("/threshold", methods=["POST"])
 def update_threshold():
+    module = data_store.active_module
+    if module is None:
+        return redirect(url_for("modules.list_modules"))
     try:
-        data_store.config.pass_threshold = float(request.form["threshold"])
+        module.config.pass_threshold = float(request.form["threshold"])
     except (KeyError, ValueError):
         flash("Invalid threshold value.", "error")
     return redirect(url_for("home.settings"))
@@ -77,20 +110,25 @@ def update_threshold():
 
 @home_bp.route("/upload", methods=["POST"])
 def upload():
+    module = data_store.active_module
+    if module is None:
+        return redirect(url_for("modules.list_modules"))
+
     file = request.files.get("data_file")
     if not file or file.filename == "":
         flash("No file selected.", "error")
         return redirect(url_for("home.settings"))
 
     try:
-        data_store.load_from_upload(file)
-        flash(
-            f"Loaded {len(data_store.student_codes())} students from {file.filename}.",
-            "success",
-        )
+        data_store.replace_module_from_file(module, file, file.filename)
     except PIIValidationError as e:
         flash(str(e), "error")
     except ValueError as e:
         flash(f"Could not load file: {e}", "error")
-
+    else:
+        flash(
+            f"Replaced module data with {len(module.students)} students and "
+            f"{len(module.assessments)} assessments from {file.filename}.",
+            "success",
+        )
     return redirect(url_for("home.settings"))

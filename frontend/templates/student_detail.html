@@ -2,18 +2,21 @@
 {% block title %}{{ student.student_code }}{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('home.home') }}" class="back-link">&larr; Back to dashboard</a>
+<a href="{{ url_for('home.students') }}" class="back-link">&larr; Back to students</a>
 
 <div class="page-header-row">
     <h1>{{ student.student_code }}</h1>
-    <form method="get" class="inline-form">
-        <label for="student_switch">Switch student</label>
-        <select id="student_switch" onchange="location.href='/student/' + this.value">
-            {% for code in all_codes %}
-                <option value="{{ code }}" {{ 'selected' if code == student.student_code else '' }}>{{ code }}</option>
-            {% endfor %}
-        </select>
-    </form>
+    <div class="row-actions">
+        <form method="get" class="inline-form">
+            <label for="student_switch">Switch student</label>
+            <select id="student_switch" onchange="location.href='/student/' + this.value">
+                {% for code in all_codes %}
+                    <option value="{{ code }}" {{ 'selected' if code == student.student_code else '' }}>{{ code }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a class="btn" href="{{ url_for('students.edit_student', student_code=student.student_code) }}">Edit details</a>
+    </div>
 </div>
 
 <div class="card-row">
@@ -39,7 +42,7 @@
             {% for a in student.assessments %}
             <tr>
                 <td>{{ a.name }}</td>
-                <td>{{ a.weight }}</td>
+                <td>{{ (a.weight * 100)|round(1) }}%</td>
                 <td>{{ a.mark if a.completed else '—' }}</td>
                 <td>{{ 'completed' if a.completed else 'remaining' }}</td>
             </tr>

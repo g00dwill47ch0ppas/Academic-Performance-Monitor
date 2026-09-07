@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add' if student is none else 'Edit' }} student{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home.students') }}" class="back-link">&larr; Back to students</a>
+
+<h1>{{ 'Add student' if student is none else 'Edit student' }}</h1>
+
+<form method="post" action="{{ form_action }}">
+    <div class="panel">
+        <h2>Student</h2>
+        <div class="inline-form">
+            <label for="student_code">Student code (anonymised)</label>
+            <input type="text" id="student_code" name="student_code"
+                   placeholder="e.g. STU016 or 46997245" value="{{ form_code }}" required>
+        </div>
+        <p class="muted">Only anonymised codes may be entered &mdash; never real names or
+        ID numbers (research ethics requirement).</p>
+    </div>
+
+    {% if module.assessments %}
+    <div class="panel">
+        <h2>Marks per assessment</h2>
+        <p class="muted">Leave a mark blank if that assessment has not been written yet.
+        Marks are out of 100.</p>
+        <table>
+            <thead>
+                <tr><th>Assessment</th><th>Weight</th><th>Mark</th></tr>
+            </thead>
+            <tbody>
+                {% for a in module.assessments %}
+                <tr>
+                    <td>{{ a.name }}</td>
+                    <td>{{ (a.weight * 100)|round(1) }}%</td>
+                    <td>
+                        <input type="number" name="mark_{{ loop.index0 }}" min="0" max="100"
+                               step="0.1" placeholder="&mdash;"
+                               value="{{ marks_raw[loop.index0] }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="panel">
+        <p class="muted">This module has no assessment plan yet, so only the student code
+        can be saved. Add assessments under <em>Assessment plan</em> first if you want to
+        record marks.</p>
+    </div>
+    {% endif %}
+
+    <div class="row-actions">
+        <button type="submit">{{ 'Add student' if student is none else 'Save changes' }}</button>
+        <a class="btn" href="{{ url_for('home.students') }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

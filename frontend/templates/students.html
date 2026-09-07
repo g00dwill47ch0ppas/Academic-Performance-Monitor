@@ -2,12 +2,19 @@
 {% block title %}Students{% endblock %}
 
 {% block content %}
-<h1>Full cohort <span class="muted">({{ rows|length }} students)</span></h1>
+<div class="page-header-row">
+    <h1>Students <span class="muted">({{ rows|length }})</span></h1>
+    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+</div>
 
+{% if rows %}
 <div class="panel">
     <table>
         <thead>
-            <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th>At-risk</th><th></th></tr>
+            <tr>
+                <th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th>
+                <th>At-risk</th><th></th>
+            </tr>
         </thead>
         <tbody>
             {% for row in rows %}
@@ -17,10 +24,26 @@
                 <td>{{ row.min_pmark }}</td>
                 <td>{{ row.max_pmark }}</td>
                 <td>{{ '⚠️ Yes' if row.at_risk else 'No' }}</td>
-                <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
+                <td class="row-actions">
+                    <a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a>
+                    <a href="{{ url_for('students.edit_student', student_code=row.student_code) }}">Edit</a>
+                    <form method="post" action="{{ url_for('students.delete_student', student_code=row.student_code) }}"
+                          onsubmit="return confirm('Remove this student and their marks?')">
+                        <button type="submit" class="link-danger">Remove</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+{% else %}
+<div class="panel">
+    <p class="muted">No students enrolled yet.</p>
+    {% if not module.assessments %}
+    <p>Tip: set up the assessment plan first, then add students with their marks.</p>
+    {% endif %}
+    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+</div>
+{% endif %}
 {% endblock %}

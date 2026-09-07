@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Modules{% endblock %}
+
+{% block content %}
+<h1>Modules</h1>
+
+{% if modules %}
+    <div class="card-row">
+        {% for m in modules %}
+        <div class="panel module-card {{ 'module-card-active' if active and m.code == active.code else '' }}">
+            <div class="module-card-head">
+                <div>
+                    <h2 class="module-title">{{ m.label }}</h2>
+                    <p class="muted">
+                        {{ m.students|length }} student{{ 's' if m.students|length != 1 else '' }} ·
+                        {{ m.assessments|length }} assessment{{ 's' if m.assessments|length != 1 else '' }} ·
+                        threshold {{ m.config.pass_threshold }}%
+                    </p>
+                </div>
+                {% if active and m.code == active.code %}
+                    <span class="tag tag-current">current</span>
+                {% endif %}
+            </div>
+            <div class="row-actions">
+                {% if active and m.code == active.code %}
+                    <span class="btn btn-disabled">Open (current)</span>
+                {% else %}
+                    <a class="btn" href="{{ url_for('modules.activate', code=m.code) }}">Open</a>
+                {% endif %}
+                <a class="btn" href="{{ url_for('modules.export_module', code=m.code) }}">Export CSV</a>
+                <a class="btn" href="{{ url_for('modules.edit_module', code=m.code) }}">Edit</a>
+                <form method="post" action="{{ url_for('modules.delete_module', code=m.code) }}"
+                      onsubmit="return confirm('Delete this module and all its students?')">
+                    <button type="submit" class="btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="panel">
+        <p>No modules yet. Create a new module to get started, or import one from a
+        CSV/XLSX file.</p>
+    </div>
+{% endif %}
+
+<div class="panel">
+    <h2>Create a new module</h2>
+    <form method="post" action="{{ url_for('modules.create_module') }}" class="inline-form">
+        <label for="module_code">Module code</label>
+        <input type="text" id="module_code" name="module_code" placeholder="e.g. MTHS111" required>
+        <label for="module_name">Module name</label>
+        <input type="text" id="module_name" name="module_name" placeholder="e.g. Calculus 1">
+        <button type="submit">Create module</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>Import a module from file</h2>
+    <form method="post" action="{{ url_for('modules.import_module') }}"
+          enctype="multipart/form-data" class="inline-form">
+        <label for="import_code">Module code</label>
+        <input type="text" id="import_code" name="module_code" placeholder="e.g. MTHS111" required>
+        <label for="import_name">Module name</label>
+        <input type="text" id="import_name" name="module_name" placeholder="e.g. Calculus 1">
+        <label for="import_file">File (.csv or .xlsx)</label>
+        <input type="file" id="import_file" name="data_file" accept=".csv,.xlsx" required>
+        <button type="submit">Import module</button>
+    </form>
+    <p class="muted">
+        Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.
+        Weights are decimal fractions (e.g. 0.2 = 20%). Leave <code>mark</code> empty for
+        assessments not yet completed.
+    </p>
+</div>
+{% endblock %}

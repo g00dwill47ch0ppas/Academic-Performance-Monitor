@@ -43,7 +43,9 @@ python app.py
 ```
 
 The app opens at `http://localhost:5000` with the bundled simulated dataset loaded
-by default.
+as a demo module (CS101) by default. Create your own modules from the **Modules**
+page — each module has its own assessment plan, students, and pass threshold.
+Data lives only in server memory and is reset when the app restarts.
 
 ## Running Tests
 
@@ -63,11 +65,11 @@ lecturer-dss/
 │   │   ├── lp_bounds.py       # Algorithm 1 — PuLP
 │   │   ├── participation_plan.py  # Algorithm 2 — combinatorics
 │   │   └── nlp_weights.py     # Algorithm 3 — scipy (see note below)
-│   ├── models/student.py      # Assessment / Student / ClassConfig
-│   ├── routes/                # home, students, cohort blueprints
-│   └── data/                  # loader, in-memory store, sample_data.csv
+│   ├── models/student.py      # Assessment / Student / Module / ClassConfig
+│   ├── routes/                # home, students, cohort, modules blueprints
+│   └── data/                  # loader, in-memory store (modules), sample_data.csv
 ├── frontend/
-│   ├── templates/             # base.html + 6 pages
+│   ├── templates/             # base.html + page templates
 │   └── static/{css,js}
 └── tests/
 ```

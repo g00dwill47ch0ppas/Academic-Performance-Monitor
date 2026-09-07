@@ -21,19 +21,53 @@
         </div>
         <div class="nav-menu" id="navMenu">
             <div class="nav-menu-inner">
-                <a href="{{ url_for('home.home') }}"
-                   class="{{ 'active' if request.endpoint == 'home.home' else '' }}">Dashboard</a>
-                <a href="{{ url_for('home.at_risk') }}"
-                   class="{{ 'active' if request.endpoint == 'home.at_risk' else '' }}">At-risk students</a>
-                <a href="{{ url_for('home.students') }}"
-                   class="{{ 'active' if request.endpoint == 'home.students' else '' }}">Students</a>
-                <a href="{{ url_for('cohort.cohort_planning') }}"
-                   class="{{ 'active' if request.endpoint == 'cohort.cohort_planning' else '' }}">Cohort Planning</a>
-                <a href="{{ url_for('home.settings') }}"
-                   class="{{ 'active' if request.endpoint == 'home.settings' else '' }}">Settings</a>
+                <div class="nav-section">
+                    {% if nav_active_module %}
+                        <span class="nav-section-label">Current module</span>
+                        <span class="nav-current-module">{{ nav_active_module.label }}</span>
+                        <a href="{{ url_for('home.home') }}"
+                           class="{{ 'active' if request.endpoint == 'home.home' else '' }}">Dashboard</a>
+                        <a href="{{ url_for('home.at_risk') }}"
+                           class="{{ 'active' if request.endpoint == 'home.at_risk' else '' }}">At-risk students</a>
+                        <a href="{{ url_for('home.students') }}"
+                           class="{{ 'active' if request.endpoint == 'home.students' else '' }}">Students</a>
+                        <a href="{{ url_for('modules.plan') }}"
+                           class="{{ 'active' if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] else '' }}">Assessment plan</a>
+                        <a href="{{ url_for('cohort.cohort_planning') }}"
+                           class="{{ 'active' if request.endpoint == 'cohort.cohort_planning' else '' }}">Cohort Planning</a>
+                        <a href="{{ url_for('home.settings') }}"
+                           class="{{ 'active' if request.endpoint == 'home.settings' else '' }}">Settings</a>
+                    {% else %}
+                        <span class="nav-section-label">Get started</span>
+                        <a href="{{ url_for('modules.list_modules') }}">Create or import a module</a>
+                    {% endif %}
+                </div>
+                <div class="nav-section">
+                    <span class="nav-section-label">Modules</span>
+                    {% for item in nav_module_items %}
+                        <a href="{{ url_for('modules.activate', code=item.code) }}"
+                           class="nav-module {{ 'active' if nav_active_module and item.code == nav_active_module.code else '' }}">
+                            {{ item.label }}
+                            {% if nav_active_module and item.code == nav_active_module.code %}
+                                <span class="nav-tag">current</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                    <a href="{{ url_for('modules.list_modules') }}"
+                       class="nav-manage {{ 'active' if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] else '' }}">Manage modules</a>
+                </div>
             </div>
         </div>
     </nav>
+
+    {% if nav_active_module %}
+    <div class="module-strip">
+        <div class="module-strip-inner">
+            <a href="{{ url_for('home.home') }}" class="module-strip-name">{{ nav_active_module.label }}</a>
+            <a href="{{ url_for('modules.list_modules') }}" class="module-strip-switch">Switch module</a>
+        </div>
+    </div>
+    {% endif %}
 
     <main class="page-content">
         {% with messages = get_flashed_messages(with_categories=true) %}

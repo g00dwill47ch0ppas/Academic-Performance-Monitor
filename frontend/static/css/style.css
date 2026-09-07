@@ -107,7 +107,7 @@ h2 {
 }
 
 .navbar.open .nav-menu {
-    max-height: 220px;
+    max-height: 800px;
     visibility: visible;
     transition: max-height 0.3s ease, visibility 0s;
 }
@@ -115,24 +115,106 @@ h2 {
 .nav-menu-inner {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 0.25rem 1.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.75rem;
+    padding: 0.35rem 0 0.9rem;
+}
+
+.nav-section + .nav-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    margin-top: 0.5rem;
+    padding-top: 0.3rem;
+}
+
+.nav-section-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #c9b8ee;
+    padding: 0.55rem 1.5rem 0.15rem;
+}
+
+.nav-current-module {
+    display: block;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0 1.5rem 0.4rem;
 }
 
 .nav-menu a {
     color: #e6dcf7;
     text-decoration: none;
     font-size: 0.95rem;
-    padding: 0.6rem 0;
-    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 1.5rem;
+    border-left: 3px solid transparent;
 }
 
-.nav-menu a:hover,
+.nav-menu a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .nav-menu a.active {
     color: #fff;
-    border-bottom-color: #fff;
+    background: rgba(255, 255, 255, 0.14);
+    border-left-color: #fff;
+}
+
+.nav-tag {
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    white-space: nowrap;
+}
+
+.nav-manage {
+    font-size: 0.88rem;
+    color: #d9cbf5;
+}
+
+/* Thin context strip under the nav showing the open module */
+.module-strip {
+    background: var(--brand-purple-dark);
+    font-size: 0.8rem;
+}
+
+.module-strip-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.4rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.module-strip-name {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.module-strip-name:hover {
+    text-decoration: underline;
+}
+
+.module-strip-switch {
+    color: #d9cbf5;
+    text-decoration: none;
+}
+
+.module-strip-switch:hover {
+    color: #fff;
+    text-decoration: underline;
 }
 
 /* Layout */
@@ -248,6 +330,7 @@ tr.at-risk-row td {
 }
 
 input[type="number"],
+input[type="text"],
 input[type="range"],
 select {
     padding: 0.35rem 0.5rem;
@@ -314,4 +397,151 @@ button:hover {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
+}
+
+/* Content links */
+.page-content a {
+    color: var(--brand-purple);
+}
+
+.page-content a:hover {
+    color: var(--brand-purple-dark);
+}
+
+/* Buttons (also usable on <a> / <span>) */
+.btn {
+    display: inline-block;
+    background: var(--brand-purple);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.45rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+a.btn,
+button.btn {
+    color: #fff;
+}
+
+.btn:hover {
+    background: var(--brand-purple-dark);
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-disabled {
+    background: transparent;
+    color: var(--muted) !important;
+    border: 1px dashed var(--muted);
+    cursor: default;
+    pointer-events: none;
+}
+
+.btn-danger {
+    background: #fff;
+    color: var(--risk-red);
+    border: 1px solid var(--risk-red);
+    border-radius: 4px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-danger:hover {
+    background: var(--risk-red);
+    color: #fff;
+}
+
+.link-danger {
+    background: none;
+    color: var(--risk-red);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.92rem;
+    text-decoration: underline;
+}
+
+.link-danger:hover {
+    background: none;
+    color: #7e241a;
+}
+
+/* Row of actions inside a card or table cell */
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.row-actions form {
+    display: inline;
+    margin: 0;
+}
+
+/* Compact weight form inside the plan table */
+.weight-form {
+    margin-bottom: 0;
+}
+
+.weight-form input[type="number"] {
+    width: 6.5rem;
+}
+
+/* Tags */
+.tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.tag-current {
+    background: var(--brand-purple);
+    color: #fff;
+}
+
+/* Module cards on the modules page */
+.module-card {
+    flex: 1 1 300px;
+    margin-bottom: 0;
+}
+
+.module-card-active {
+    border-color: var(--brand-purple);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--brand-purple);
+}
+
+.module-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.module-title {
+    margin: 0 0 0.35rem;
+}
+
+.module-card-head p {
+    margin: 0;
+}
+
+.module-card .row-actions {
+    margin-top: 1rem;
+}
+
+code {
+    background: #f0ecf9;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.85em;
 }

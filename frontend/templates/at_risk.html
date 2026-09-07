@@ -2,7 +2,7 @@
 {% block title %}At-risk students{% endblock %}
 
 {% block content %}
-<h1>At-risk students <span class="muted">(best-case p-mark below {{ threshold }}%)</span></h1>
+<h1>At-risk students <span class="muted">(best-case p-mark below {{ '%g'|format(threshold) }}%)</span></h1>
 
 {% if at_risk_rows|length == 0 %}
     <div class="panel">

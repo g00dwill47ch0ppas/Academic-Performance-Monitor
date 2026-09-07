@@ -55,17 +55,82 @@ h2 {
     font-size: 1.05rem;
 }
 
-.nav-links a {
+/* Burger (hamburger) toggle button */
+.nav-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 44px;
+    height: 40px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.nav-toggle:hover {
+    background: var(--brand-purple-dark);
+}
+
+.nav-toggle-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 1px;
+    background: #fff;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Animate the burger into an X when the menu is open */
+.navbar.open .nav-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.navbar.open .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar.open .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Slide-down menu panel, collapsed by default */
+.nav-menu {
+    max-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: max-height 0.3s ease, visibility 0s linear 0.3s;
+    background: var(--brand-purple-dark);
+}
+
+.navbar.open .nav-menu {
+    max-height: 220px;
+    visibility: visible;
+    transition: max-height 0.3s ease, visibility 0s;
+}
+
+.nav-menu-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.25rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+}
+
+.nav-menu a {
     color: #e6dcf7;
     text-decoration: none;
-    margin-left: 1.5rem;
     font-size: 0.95rem;
-    padding-bottom: 4px;
+    padding: 0.6rem 0;
     border-bottom: 2px solid transparent;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
+.nav-menu a:hover,
+.nav-menu a.active {
     color: #fff;
     border-bottom-color: #fff;
 }

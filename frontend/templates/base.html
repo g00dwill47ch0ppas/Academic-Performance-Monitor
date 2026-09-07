@@ -8,10 +8,19 @@
 </head>
 <body>
 
-    <nav class="navbar">
+    <nav class="navbar" id="siteNav">
         <div class="navbar-inner">
             <span class="brand">Student Performance Assistant</span>
-            <div class="nav-links">
+            <button type="button" class="nav-toggle" id="navToggle"
+                    aria-expanded="false" aria-controls="navMenu"
+                    aria-label="Toggle navigation menu">
+                <span class="nav-toggle-bar" aria-hidden="true"></span>
+                <span class="nav-toggle-bar" aria-hidden="true"></span>
+                <span class="nav-toggle-bar" aria-hidden="true"></span>
+            </button>
+        </div>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-menu-inner">
                 <a href="{{ url_for('home.home') }}"
                    class="{{ 'active' if request.endpoint == 'home.home' else '' }}">Dashboard</a>
                 <a href="{{ url_for('cohort.cohort_planning') }}"

@@ -23,8 +23,14 @@
             <div class="nav-menu-inner">
                 <a href="{{ url_for('home.home') }}"
                    class="{{ 'active' if request.endpoint == 'home.home' else '' }}">Dashboard</a>
+                <a href="{{ url_for('home.at_risk') }}"
+                   class="{{ 'active' if request.endpoint == 'home.at_risk' else '' }}">At-risk students</a>
+                <a href="{{ url_for('home.students') }}"
+                   class="{{ 'active' if request.endpoint == 'home.students' else '' }}">Students</a>
                 <a href="{{ url_for('cohort.cohort_planning') }}"
                    class="{{ 'active' if request.endpoint == 'cohort.cohort_planning' else '' }}">Cohort Planning</a>
+                <a href="{{ url_for('home.settings') }}"
+                   class="{{ 'active' if request.endpoint == 'home.settings' else '' }}">Settings</a>
             </div>
         </div>
     </nav>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}At-risk students{% endblock %}
+
+{% block content %}
+<h1>At-risk students <span class="muted">(best-case p-mark below {{ threshold }}%)</span></h1>
+
+{% if at_risk_rows|length == 0 %}
+    <div class="panel">
+        <p class="success-text">No students currently flagged as at-risk.</p>
+    </div>
+{% else %}
+    <div class="panel">
+        <table>
+            <thead>
+                <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for row in at_risk_rows|sort(attribute='max_pmark') %}
+                <tr class="at-risk-row">
+                    <td>{{ row.student_code }}</td>
+                    <td>{{ row.current_pmark }}</td>
+                    <td>{{ row.min_pmark }}</td>
+                    <td>{{ row.max_pmark }}</td>
+                    <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

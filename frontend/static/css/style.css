@@ -172,6 +172,18 @@ h2 {
     border-color: var(--risk-red);
 }
 
+a.stat-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+a.stat-card:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
 .stat-label {
     display: block;
     color: var(--muted);

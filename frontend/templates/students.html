@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<h1>Full cohort <span class="muted">({{ rows|length }} students)</span></h1>
+
+<div class="panel">
+    <table>
+        <thead>
+            <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th>At-risk</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr class="{{ 'at-risk-row' if row.at_risk else '' }}">
+                <td>{{ row.student_code }}</td>
+                <td>{{ row.current_pmark }}</td>
+                <td>{{ row.min_pmark }}</td>
+                <td>{{ row.max_pmark }}</td>
+                <td>{{ '⚠️ Yes' if row.at_risk else 'No' }}</td>
+                <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

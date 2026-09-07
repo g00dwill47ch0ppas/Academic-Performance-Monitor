@@ -67,7 +67,7 @@ lecturer-dss/
 │   ├── routes/                # home, students, cohort blueprints
 │   └── data/                  # loader, in-memory store, sample_data.csv
 ├── frontend/
-│   ├── templates/             # base.html + 3 pages
+│   ├── templates/             # base.html + 6 pages
 │   └── static/{css,js}
 └── tests/
 ```

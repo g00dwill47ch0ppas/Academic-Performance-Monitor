@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Class Dashboard</h1>
+
+<div class="card-row">
+    <div class="stat-card">
+        <span class="stat-label">Class average (current)</span>
+        <span class="stat-value">{{ class_average }}</span>
+    </div>
+    <a href="{{ url_for('home.at_risk') }}" class="stat-card {{ 'stat-card-risk' if at_risk_count else '' }}">
+        <span class="stat-label">At-risk students</span>
+        <span class="stat-value">{{ at_risk_count }}</span>
+    </a>
+    <a href="{{ url_for('home.students') }}" class="stat-card">
+        <span class="stat-label">Class size</span>
+        <span class="stat-value">{{ class_size }}</span>
+    </a>
+</div>
+
+<p class="muted">Use the menu to browse at-risk students, the full cohort, or class settings.</p>
+{% endblock %}

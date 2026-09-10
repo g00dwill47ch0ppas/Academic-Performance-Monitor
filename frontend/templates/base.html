@@ -3,13 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Lecturer DSS{% endblock %} — Student Performance Assistant</title>
+    <title>{% block title %}Dashboard{% endblock %} — Student Performance Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Apply the saved colour scheme before first paint to avoid a flash.
+        try {
+            if (localStorage.getItem("spa-theme") === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+        } catch (e) { /* storage unavailable — fall back to light */ }
+    </script>
 </head>
 <body>
 
-    <!-- Shared inline icon sprite (Feather-style, stroke = currentColor) -->
+    <!-- Shared inline icon sprite (stroke = currentColor, Feather style) -->
     <svg class="svg-sprite" aria-hidden="true" focusable="false">
+        <symbol id="i-grad" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 9.5 12 5 2 9.5l10 4.5 10-4.5z"/>
+                <path d="M6 11.6V17c0 1.6 2.7 2.8 6 2.8s6-1.2 6-2.8v-5.4"/>
+                <line x1="22" y1="9.5" x2="22" y2="15"/>
+            </g>
+        </symbol>
         <symbol id="i-grid" viewBox="0 0 24 24">
             <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7"/>
@@ -33,6 +51,14 @@
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </g>
         </symbol>
+        <symbol id="i-user-plus" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="16" y1="11" x2="22" y2="11"/>
+            </g>
+        </symbol>
         <symbol id="i-edit" viewBox="0 0 24 24">
             <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9"/>
@@ -51,6 +77,12 @@
                 <line x1="18" y1="20" x2="18" y2="10"/>
                 <line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/>
+            </g>
+        </symbol>
+        <symbol id="i-trending" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                <polyline points="17 6 23 6 23 12"/>
             </g>
         </symbol>
         <symbol id="i-gear" viewBox="0 0 24 24">
@@ -89,106 +121,218 @@
                 <line x1="5" y1="12" x2="19" y2="12"/>
             </g>
         </symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </g>
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </g>
+        </symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </g>
+        </symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <line x1="12" y1="2" x2="12" y2="4"/>
+                <line x1="12" y1="20" x2="12" y2="22"/>
+                <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/>
+                <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/>
+                <line x1="2" y1="12" x2="4" y2="12"/>
+                <line x1="20" y1="12" x2="22" y2="12"/>
+                <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/>
+                <line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>
+            </g>
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </g>
+        </symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </g>
+        </symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+            </g>
+        </symbol>
+        <symbol id="i-file" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="8" y1="13" x2="16" y2="13"/>
+                <line x1="8" y1="17" x2="16" y2="17"/>
+            </g>
+        </symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </g>
+        </symbol>
+        <symbol id="i-target" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="6"/>
+                <circle cx="12" cy="12" r="2"/>
+            </g>
+        </symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </g>
+        </symbol>
+        <symbol id="i-save" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+            </g>
+        </symbol>
     </svg>
 
-    <nav class="navbar" id="siteNav" aria-label="Main">
-        <div class="navbar-inner">
-            <span class="brand">Student Performance Assistant</span>
-            <button type="button" class="nav-toggle" id="navToggle"
-                    aria-expanded="false" aria-controls="navMenu"
-                    aria-label="Toggle navigation menu">
-                <span class="nav-toggle-bar" aria-hidden="true"></span>
-                <span class="nav-toggle-bar" aria-hidden="true"></span>
-                <span class="nav-toggle-bar" aria-hidden="true"></span>
-            </button>
-        </div>
-        <div class="nav-menu" id="navMenu">
-            <div class="nav-menu-inner">
-                {% if nav_active_module %}
-                <div class="nav-section">
-                    <span class="nav-section-label">Pages</span>
-                    <a href="{{ url_for('home.home') }}"
-                       {% if request.endpoint == 'home.home' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                    <a href="{{ url_for('home.at_risk') }}"
-                       {% if request.endpoint == 'home.at_risk' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
-                        <span class="nav-text">At-risk students</span>
-                    </a>
-                    <a href="{{ url_for('home.students') }}"
-                       {% if request.endpoint == 'home.students' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
-                        <span class="nav-text">Students</span>
-                    </a>
-                    <a href="{{ url_for('students.bulk_marks') }}"
-                       {% if request.endpoint == 'students.bulk_marks' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
-                        <span class="nav-text">Enter marks</span>
-                    </a>
-                    <a href="{{ url_for('modules.plan') }}"
-                       {% if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
-                        <span class="nav-text">Assessment plan</span>
-                    </a>
-                    <a href="{{ url_for('cohort.cohort_planning') }}"
-                       {% if request.endpoint == 'cohort.cohort_planning' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
-                        <span class="nav-text">Cohort Planning</span>
-                    </a>
-                    <a href="{{ url_for('home.settings') }}"
-                       {% if request.endpoint == 'home.settings' %}class="active" aria-current="page"{% endif %}>
-                        <svg class="icon" aria-hidden="true"><use href="#i-gear"></use></svg>
-                        <span class="nav-text">Settings</span>
-                    </a>
-                </div>
-                {% else %}
-                <div class="nav-section">
-                    <span class="nav-section-label">Get started</span>
-                    <a href="{{ url_for('modules.list_modules') }}">
-                        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-                        <span class="nav-text">Create or import a module</span>
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if nav_module_items %}
-                <div class="nav-section">
-                    <span class="nav-section-label">Switch module</span>
-                    {% for item in nav_module_items %}
-                    <a href="{{ url_for('modules.activate', code=item.code) }}"
-                       class="{{ 'active' if nav_active_module and item.code == nav_active_module.code else '' }}">
-                        <svg class="icon icon-dim" aria-hidden="true"><use href="#i-book"></use></svg>
-                        <span class="nav-text">
-                            <span class="nav-module-code">{{ item.code }}</span>
-                            {% if item.name %}<span class="nav-module-name">{{ item.name }}</span>{% endif %}
-                        </span>
-                        {% if nav_active_module and item.code == nav_active_module.code %}
-                            <svg class="icon nav-check" aria-hidden="true"><use href="#i-check"></use></svg>
-                        {% endif %}
-                    </a>
-                    {% endfor %}
-                    <a class="nav-manage {{ 'active' if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] else '' }}"
-                       href="{{ url_for('modules.list_modules') }}"
-                       {% if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] %}aria-current="page"{% endif %}>
-                        <svg class="icon icon-dim" aria-hidden="true"><use href="#i-sliders"></use></svg>
-                        <span class="nav-text">Manage modules &amp; import</span>
-                    </a>
-                </div>
-                {% endif %}
+    <nav class="navbar" aria-label="Main">
+        <div class="navbar-left">
+            <div class="logo" aria-hidden="true">
+                <svg class="icon"><use href="#i-grad"></use></svg>
             </div>
+            <div class="title-group">
+                <h1>NWU Student Performance Assistant</h1>
+                <p>
+                    {% if nav_active_module %}
+                        {{ nav_active_module.label }} &middot; Academic Performance Monitoring System
+                    {% else %}
+                        Academic Performance Monitoring System
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <button type="button" class="icon-button" id="darkModeToggle"
+                    aria-label="Toggle dark mode" aria-pressed="false" title="Toggle dark mode">
+                <svg class="icon" id="themeIconMoon" aria-hidden="true"><use href="#i-moon"></use></svg>
+                <svg class="icon" id="themeIconSun" aria-hidden="true" hidden><use href="#i-sun"></use></svg>
+            </button>
+            <button type="button" class="icon-button" id="navToggle"
+                    aria-label="Open navigation" aria-expanded="false" aria-controls="navSidebar"
+                    title="Navigation">
+                <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
+            </button>
         </div>
     </nav>
 
-    {% if nav_active_module %}
-    <div class="module-strip">
-        <div class="module-strip-inner">
-            <a href="{{ url_for('home.home') }}" class="module-strip-name">{{ nav_active_module.label }}</a>
-            <a href="{{ url_for('modules.list_modules') }}" class="module-strip-switch">Switch module</a>
+    <div class="settings-overlay" id="navOverlay"></div>
+
+    <aside class="settings-sidebar" id="navSidebar" aria-label="Navigation">
+        <div class="settings-header">
+            <div>
+                <h3>Navigation</h3>
+                <p>Student Performance Assistant</p>
+            </div>
+            <button type="button" class="settings-close" id="navClose" aria-label="Close navigation">
+                <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+            </button>
         </div>
-    </div>
-    {% endif %}
+
+        <div class="settings-content">
+            {% if nav_active_module %}
+            <p class="settings-label">Dashboard</p>
+            <a href="{{ url_for('home.home') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'home.home' else '' }}"
+               {% if request.endpoint == 'home.home' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg>
+                <span class="settings-link-text">Overview</span>
+            </a>
+            <a href="{{ url_for('home.at_risk') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'home.at_risk' else '' }}"
+               {% if request.endpoint == 'home.at_risk' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                <span class="settings-link-text">At-risk students</span>
+            </a>
+            <a href="{{ url_for('home.students') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'home.students' else '' }}"
+               {% if request.endpoint == 'home.students' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
+                <span class="settings-link-text">Students</span>
+            </a>
+            <a href="{{ url_for('students.bulk_marks') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'students.bulk_marks' else '' }}"
+               {% if request.endpoint == 'students.bulk_marks' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+                <span class="settings-link-text">Enter marks</span>
+            </a>
+            <a href="{{ url_for('modules.plan') }}"
+               class="settings-link{{ ' active' if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] else '' }}"
+               {% if request.endpoint in ['modules.plan', 'modules.add_assessment', 'modules.update_assessment', 'modules.delete_assessment'] %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
+                <span class="settings-link-text">Assessment plan</span>
+            </a>
+            <a href="{{ url_for('cohort.cohort_planning') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'cohort.cohort_planning' else '' }}"
+               {% if request.endpoint == 'cohort.cohort_planning' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
+                <span class="settings-link-text">Cohort planning</span>
+            </a>
+            <a href="{{ url_for('home.settings') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'home.settings' else '' }}"
+               {% if request.endpoint == 'home.settings' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-gear"></use></svg>
+                <span class="settings-link-text">Settings</span>
+            </a>
+            {% else %}
+            <p class="settings-label">Get started</p>
+            <a href="{{ url_for('modules.list_modules') }}" class="settings-link">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                <span class="settings-link-text">Create or import a module</span>
+            </a>
+            {% endif %}
+
+            {% if nav_module_items %}
+            <p class="settings-label">Switch module</p>
+            {% for item in nav_module_items %}
+            <a href="{{ url_for('modules.activate', code=item.code) }}"
+               class="settings-link{{ ' active' if nav_active_module and item.code == nav_active_module.code else '' }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg>
+                <span class="settings-link-text">
+                    <strong>{{ item.code }}</strong>
+                    {% if item.name %}<span class="nav-module-name">{{ item.name }}</span>{% endif %}
+                </span>
+                {% if nav_active_module and item.code == nav_active_module.code %}
+                <svg class="icon nav-check" aria-hidden="true"><use href="#i-check"></use></svg>
+                {% endif %}
+            </a>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="settings-footer">
+            <a class="btn{{ ' btn-secondary' if request.endpoint in ['modules.list_modules', 'modules.create_module', 'modules.import_module', 'modules.edit_module'] else '' }}"
+               href="{{ url_for('modules.list_modules') }}">
+                <svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg>
+                Manage modules &amp; import
+            </a>
+            <p class="settings-note">Research prototype &mdash; ITRI671 &middot; NWU</p>
+        </div>
+    </aside>
 
     <main class="page-content">
         {% with messages = get_flashed_messages(with_categories=true) %}

@@ -74,6 +74,24 @@ lecturer-dss/
 └── tests/
 ```
 
+## User interface
+
+The visual theme and the navigation mirror the
+[Student-Performance-Assistant](https://github.com/45000794Ndlakuse/Student-Performance-Assistant)
+reference project:
+
+- **Palette & type:** purple primary (#4E2A84) with a (#F5B301) accent on a
+  #F8F9FC background; Inter for body text, Poppins for headings.
+- **Navigation:** a purple navbar (logo, title, active-module subtitle) whose
+  menu button opens the navigation panel sliding in from the right. The panel
+  lists the active module's pages above the module switcher.
+- **Components:** card panels with header strips, icon stat cards, hover
+  tables, pill badges, and a light/dark colour-scheme toggle that is
+  remembered per browser.
+
+Presentational only — every calculation remains in `backend/algorithms/`,
+untouched.
+
 ## A note on the tech stack
 
 This project intentionally matches the reference repo above: **Flask**, **PuLP**,

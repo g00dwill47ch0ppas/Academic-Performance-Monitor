@@ -2,30 +2,61 @@
 {% block title %}At-risk students{% endblock %}
 
 {% block content %}
-<h1>At-risk students <span class="muted">(best-case p-mark below {{ '%g'|format(threshold) }}%)</span></h1>
+<div class="page-head">
+    <h1>At-risk students</h1>
+    <p>
+        Students whose best-case p-mark cannot reach the module threshold of
+        {{ '%g'|format(threshold) }}%.
+    </p>
+</div>
 
 {% if at_risk_rows|length == 0 %}
     <div class="panel">
+        <h2>No flags</h2>
         <p class="success-text">No students currently flagged as at-risk.</p>
     </div>
 {% else %}
     <div class="panel">
-        <table>
-            <thead>
-                <tr><th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th><th></th></tr>
-            </thead>
-            <tbody>
-                {% for row in at_risk_rows|sort(attribute='max_pmark') %}
-                <tr class="at-risk-row">
-                    <td>{{ row.student_code }}</td>
-                    <td>{{ row.current_pmark }}</td>
-                    <td>{{ row.min_pmark }}</td>
-                    <td>{{ row.max_pmark }}</td>
-                    <td><a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <h2>
+            {{ at_risk_rows|length }} student{{ 's' if at_risk_rows|length != 1 else '' }}
+            need attention
+        </h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Current p-mark</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in at_risk_rows|sort(attribute='max_pmark') %}
+                    <tr class="at-risk-row">
+                        <td>{{ row.student_code }}</td>
+                        <td>{{ row.current_pmark }}</td>
+                        <td>{{ row.min_pmark }}</td>
+                        <td>{{ row.max_pmark }}</td>
+                        <td>
+                            <span class="badge badge-danger">
+                                <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                                At risk
+                            </span>
+                        </td>
+                        <td>
+                            <a class="btn btn-secondary" href="{{ url_for('students.student_detail', student_code=row.student_code) }}">
+                                <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg>
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endif %}
 {% endblock %}

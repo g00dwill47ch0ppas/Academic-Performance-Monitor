@@ -2,11 +2,14 @@
 {% block title %}Enter marks{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('home.students') }}" class="back-link">&larr; Back to students</a>
+<a href="{{ url_for('home.students') }}" class="back-link">
+    <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+    Back to students
+</a>
 
-<div class="page-header-row">
+<div class="page-head">
     <h1>Enter marks</h1>
-    <span class="muted">{{ module.label }}</span>
+    <p>Record one assessment for the whole class in a single pass &mdash; {{ module.label }}</p>
 </div>
 
 {% if module.assessments %}
@@ -21,7 +24,10 @@
                 </option>
             {% endfor %}
         </select>
-        <button type="submit">Choose</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+            Choose
+        </button>
     </form>
 </div>
 
@@ -33,47 +39,67 @@
 
     <form method="post" action="{{ url_for('students.bulk_marks') }}">
         <input type="hidden" name="assessment" value="{{ selected }}">
-        <table>
-            <thead>
-                <tr><th>Student</th><th>Mark</th><th>Previous</th></tr>
-            </thead>
-            <tbody>
-                {% for s in module.students %}
-                {% set entry = module.student_assessment(s, selected) %}
-                <tr>
-                    <td>{{ s.student_code }}</td>
-                    <td>
-                        <input type="number" name="mark_{{ s.student_code }}" min="0" max="100"
-                               step="0.1" placeholder="&mdash;"
-                               value="{{ raws.get('mark_' ~ s.student_code, '') if raws is not none
-                                        else (entry.mark if entry is not none and entry.mark is not none else '') }}">
-                    </td>
-                    <td>
-                        {% if entry is not none and entry.completed %}
-                            <span class="success-text">{{ entry.mark }} &middot; completed</span>
-                        {% else %}
-                            <span class="muted">not yet written</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <p class="row-actions" style="margin-top:1rem">
-            <button type="submit">Save marks for “{{ selected }}”</button>
-        </p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Student</th><th>Mark</th><th>Previous</th></tr>
+                </thead>
+                <tbody>
+                    {% for s in module.students %}
+                    {% set entry = module.student_assessment(s, selected) %}
+                    <tr>
+                        <td>{{ s.student_code }}</td>
+                        <td>
+                            <input type="number" name="mark_{{ s.student_code }}" min="0" max="100"
+                                   step="0.1" placeholder="&mdash;"
+                                   value="{{ raws.get('mark_' ~ s.student_code, '') if raws is not none
+                                            else (entry.mark if entry is not none and entry.mark is not none else '') }}">
+                        </td>
+                        <td>
+                            {% if entry is not none and entry.completed %}
+                                <span class="badge badge-ok">
+                                    <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                                    {{ entry.mark }} &middot; completed
+                                </span>
+                            {% else %}
+                                <span class="badge badge-muted">Not yet written</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row-actions" style="margin-top:1.25rem">
+            <button type="submit">
+                <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+                Save marks for “{{ selected }}”
+            </button>
+        </div>
     </form>
 </div>
 {% else %}
 <div class="panel">
+    <h2>No students enrolled</h2>
     <p class="muted">No students enrolled yet.</p>
-    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+    <div class="row-actions" style="margin-top:1rem">
+        <a class="btn" href="{{ url_for('students.add_student') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>
+            Add student
+        </a>
+    </div>
 </div>
 {% endif %}
 {% else %}
 <div class="panel">
+    <h2>No assessment plan yet</h2>
     <p class="muted">This module has no assessment plan yet — add assessments first.</p>
-    <a class="btn" href="{{ url_for('modules.plan') }}">Go to assessment plan</a>
+    <div class="row-actions" style="margin-top:1rem">
+        <a class="btn" href="{{ url_for('modules.plan') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
+            Go to assessment plan
+        </a>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

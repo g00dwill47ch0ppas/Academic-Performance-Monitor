@@ -2,18 +2,22 @@
 {% block title %}Modules{% endblock %}
 
 {% block content %}
-<h1>Modules</h1>
+<div class="page-head">
+    <h1>Modules</h1>
+    <p>Open a module to work on it, or create and import new ones.</p>
+</div>
 
 {% if modules %}
-    <div class="card-row">
+    <div class="card-grid">
         {% for m in modules %}
         <div class="panel module-card {{ 'module-card-active' if active and m.code == active.code else '' }}">
             <div class="module-card-head">
-                <div>
+                <span class="module-icon" aria-hidden="true"><svg class="icon"><use href="#i-book"></use></svg></span>
+                <div class="module-card-title">
                     <h2 class="module-title">{{ m.label }}</h2>
                     <p class="muted">
-                        {{ m.students|length }} student{{ 's' if m.students|length != 1 else '' }} ·
-                        {{ m.assessments|length }} assessment{{ 's' if m.assessments|length != 1 else '' }} ·
+                        {{ m.students|length }} student{{ 's' if m.students|length != 1 else '' }} &middot;
+                        {{ m.assessments|length }} assessment{{ 's' if m.assessments|length != 1 else '' }} &middot;
                         threshold {{ m.config.pass_threshold }}%
                     </p>
                 </div>
@@ -23,16 +27,34 @@
             </div>
             <div class="row-actions">
                 {% if active and m.code == active.code %}
-                    <span class="btn btn-disabled">Open (current)</span>
+                    <span class="btn btn-disabled">
+                        <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                        Open (current)
+                    </span>
                 {% else %}
-                    <a class="btn" href="{{ url_for('modules.activate', code=m.code) }}">Open</a>
+                    <a class="btn" href="{{ url_for('modules.activate', code=m.code) }}">
+                        <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                        Open
+                    </a>
                 {% endif %}
-                <a class="btn" href="{{ url_for('modules.export_module', code=m.code) }}">Export data</a>
-                <a class="btn" href="{{ url_for('modules.summary_export', code=m.code) }}">Export summary</a>
-                <a class="btn" href="{{ url_for('modules.edit_module', code=m.code) }}">Edit</a>
+                <a class="btn btn-secondary" href="{{ url_for('modules.edit_module', code=m.code) }}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+                    Edit
+                </a>
+                <a class="btn btn-secondary" href="{{ url_for('modules.export_module', code=m.code) }}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                    Export data
+                </a>
+                <a class="btn btn-secondary" href="{{ url_for('modules.summary_export', code=m.code) }}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-file"></use></svg>
+                    Export summary
+                </a>
                 <form method="post" action="{{ url_for('modules.delete_module', code=m.code) }}"
                       onsubmit="return confirm('Delete this module and all its students?')">
-                    <button type="submit" class="btn-danger">Delete</button>
+                    <button type="submit" class="btn-danger">
+                        <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                        Delete
+                    </button>
                 </form>
             </div>
         </div>
@@ -40,8 +62,8 @@
     </div>
 {% else %}
     <div class="panel">
-        <p>No modules yet. Create a new module to get started, or import one from a
-        CSV/XLSX file.</p>
+        <h2>No modules yet</h2>
+        <p>Create a new module to get started, or import one from a CSV/XLSX file.</p>
     </div>
 {% endif %}
 
@@ -52,7 +74,10 @@
         <input type="text" id="module_code" name="module_code" placeholder="e.g. MTHS111" required>
         <label for="module_name">Module name</label>
         <input type="text" id="module_name" name="module_name" placeholder="e.g. Calculus 1">
-        <button type="submit">Create module</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            Create module
+        </button>
     </form>
 </div>
 
@@ -66,7 +91,10 @@
         <input type="text" id="import_name" name="module_name" placeholder="e.g. Calculus 1">
         <label for="import_file">File (.csv or .xlsx)</label>
         <input type="file" id="import_file" name="data_file" accept=".csv,.xlsx" required>
-        <button type="submit">Import module</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+            Import module
+        </button>
     </form>
     <p class="muted">
         Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.

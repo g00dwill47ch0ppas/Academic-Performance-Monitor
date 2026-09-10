@@ -2,45 +2,62 @@
 {% block title %}Settings{% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
+<div class="page-head">
+    <h1>Settings</h1>
+    <p>Module options, data import and exports for {{ module.label }}.</p>
+</div>
 
 <div class="panel">
-    <h2>Pass threshold <span class="muted">({{ module.label }})</span></h2>
+    <h2>Pass threshold</h2>
     <p class="muted">A student is flagged at-risk when even their best-case p-mark stays
     below this threshold.</p>
     <form method="post" action="{{ url_for('home.update_threshold') }}" class="inline-form">
         <label for="threshold">Pass threshold (%)</label>
         <input type="number" id="threshold" name="threshold" min="0" max="100" step="1"
                value="{{ threshold }}">
-        <button type="submit">Update</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+            Update threshold
+        </button>
     </form>
 </div>
 
 <div class="panel">
-    <h2>Module data file <span class="muted">({{ module.label }})</span></h2>
+    <h2>Export module data</h2>
     <p class="muted">
         Currently {{ student_count }} student{{ 's' if student_count != 1 else '' }} and
         {{ assessment_count }} assessment{{ 's' if assessment_count != 1 else '' }}.
+        The data file uses the same format the importer expects, so exports can be edited
+        and re-imported.
     </p>
-    <p class="row-actions">
+    <div class="row-actions">
         <a class="btn" href="{{ url_for('modules.export_module', code=module.code) }}">
-            Download {{ module.code }} data (.csv)
+            <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+            {{ module.code }} data (.csv)
         </a>
-        <a class="btn" href="{{ url_for('modules.summary_export', code=module.code) }}">
-            Download summary (.csv)
+        <a class="btn btn-secondary" href="{{ url_for('modules.summary_export', code=module.code) }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-file"></use></svg>
+            Summary (.csv)
         </a>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Replace module data from a file</h2>
+    <p class="muted">
+        Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.
+        Weights are decimal fractions (e.g. 0.2 = 20%). The module code, name and thresholds
+        are kept.
     </p>
     <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data"
           class="inline-form"
           onsubmit="return confirm('This replaces the current assessment plan and all students of this module. Continue?')">
         <label for="data_file">Upload class data (.csv or .xlsx)</label>
         <input type="file" id="data_file" name="data_file" accept=".csv,.xlsx" required>
-        <button type="submit">Replace data</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+            Replace data
+        </button>
     </form>
-    <p class="muted">
-        Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.
-        Weights are decimal fractions (e.g. 0.2 = 20%). The module code, name and thresholds
-        are kept.
-    </p>
 </div>
 {% endblock %}

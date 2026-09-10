@@ -2,22 +2,58 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>Class Dashboard</h1>
+<section class="hero">
+    <div class="hero-content">
+        <span class="hero-badge">{{ module.code }}</span>
+        <h1>Class dashboard</h1>
+        <p>
+            {{ module.name or 'Module overview' }} &mdash; participation-mark performance for the
+            whole class, including the best-case and worst-case projections for assessments
+            that have not been written yet.
+        </p>
+    </div>
+    <div class="hero-icon" aria-hidden="true">
+        <svg class="icon"><use href="#i-chart"></use></svg>
+    </div>
+</section>
 
 <div class="card-row">
     <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
         <span class="stat-label">Class average (current)</span>
         <span class="stat-value">{{ class_average }}</span>
     </div>
     <a href="{{ url_for('home.at_risk') }}" class="stat-card {{ 'stat-card-risk' if at_risk_count else '' }}">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>
         <span class="stat-label">At-risk students</span>
         <span class="stat-value">{{ at_risk_count }}</span>
     </a>
     <a href="{{ url_for('home.students') }}" class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-users"></use></svg></span>
         <span class="stat-label">Class size</span>
         <span class="stat-value">{{ class_size }}</span>
     </a>
 </div>
 
-<p class="muted">Use the menu to browse at-risk students, the full cohort, or class settings.</p>
+<div class="panel">
+    <h2>Quick actions</h2>
+    <div class="row-actions">
+        <a class="btn" href="{{ url_for('home.at_risk') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+            Review at-risk students
+        </a>
+        <a class="btn btn-secondary" href="{{ url_for('students.bulk_marks') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+            Enter marks
+        </a>
+        <a class="btn btn-secondary" href="{{ url_for('home.students') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>
+            Manage students
+        </a>
+        <a class="btn btn-secondary" href="{{ url_for('cohort.cohort_planning') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
+            Cohort planning
+        </a>
+    </div>
+</div>
 {% endblock %}

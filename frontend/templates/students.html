@@ -3,47 +3,91 @@
 
 {% block content %}
 <div class="page-header-row">
-    <h1>Students <span class="muted">({{ rows|length }})</span></h1>
-    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+    <div class="page-head">
+        <h1>Students</h1>
+        <p>{{ rows|length }} student{{ 's' if rows|length != 1 else '' }} in {{ module.label }}</p>
+    </div>
+    <a class="btn" href="{{ url_for('students.add_student') }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>
+        Add student
+    </a>
 </div>
 
 {% if rows %}
 <div class="panel">
-    <table>
-        <thead>
-            <tr>
-                <th>Student</th><th>Current p-mark</th><th>Min</th><th>Max</th>
-                <th>At-risk</th><th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-            <tr class="{{ 'at-risk-row' if row.at_risk else '' }}">
-                <td>{{ row.student_code }}</td>
-                <td>{{ row.current_pmark }}</td>
-                <td>{{ row.min_pmark }}</td>
-                <td>{{ row.max_pmark }}</td>
-                <td>{{ '⚠️ Yes' if row.at_risk else 'No' }}</td>
-                <td class="row-actions">
-                    <a href="{{ url_for('students.student_detail', student_code=row.student_code) }}">View</a>
-                    <a href="{{ url_for('students.edit_student', student_code=row.student_code) }}">Edit</a>
-                    <form method="post" action="{{ url_for('students.delete_student', student_code=row.student_code) }}"
-                          onsubmit="return confirm('Remove this student and their marks?')">
-                        <button type="submit" class="link-danger">Remove</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <h2>Cohort list</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Current p-mark</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="{{ 'at-risk-row' if row.at_risk else '' }}">
+                    <td>{{ row.student_code }}</td>
+                    <td>{{ row.current_pmark }}</td>
+                    <td>{{ row.min_pmark }}</td>
+                    <td>{{ row.max_pmark }}</td>
+                    <td>
+                        {% if row.at_risk %}
+                            <span class="badge badge-danger">
+                                <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                                At risk
+                            </span>
+                        {% else %}
+                            <span class="badge badge-ok">
+                                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                                On track
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="row-actions">
+                        <a class="btn btn-secondary" href="{{ url_for('students.student_detail', student_code=row.student_code) }}">
+                            <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg>
+                            View
+                        </a>
+                        <a class="btn btn-secondary" href="{{ url_for('students.edit_student', student_code=row.student_code) }}">
+                            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+                            Edit
+                        </a>
+                        <form method="post" action="{{ url_for('students.delete_student', student_code=row.student_code) }}"
+                              onsubmit="return confirm('Remove this student and their marks?')">
+                            <button type="submit" class="btn-danger">
+                                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                Remove
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
 <div class="panel">
+    <h2>No students yet</h2>
     <p class="muted">No students enrolled yet.</p>
     {% if not module.assessments %}
     <p>Tip: set up the assessment plan first, then add students with their marks.</p>
     {% endif %}
-    <a class="btn" href="{{ url_for('students.add_student') }}">+ Add student</a>
+    <div class="row-actions" style="margin-top:1rem">
+        <a class="btn" href="{{ url_for('students.add_student') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>
+            Add student
+        </a>
+        <a class="btn btn-secondary" href="{{ url_for('modules.plan') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
+            Assessment plan
+        </a>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

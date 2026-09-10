@@ -1,9 +1,10 @@
 console.log("Student Performance Assistant Loaded.");
 
-// Auto-dismiss flash messages after a few seconds for a cleaner UI.
+// ---------------------------------------------------------------------------
+// Flash messages: fade out after a few seconds for a cleaner UI.
+// ---------------------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-    const flashes = document.querySelectorAll(".flash");
-    flashes.forEach((el) => {
+    document.querySelectorAll(".flash").forEach((el) => {
         setTimeout(() => {
             el.style.transition = "opacity 0.4s ease";
             el.style.opacity = "0";
@@ -11,116 +12,163 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// Burger menu: toggle the slide-down navigation panel with keyboard support.
-// While open, Tab/Shift+Tab cycle inside the panel (focus trap) and Escape
-// closes it, returning focus to the toggle button.
+// ---------------------------------------------------------------------------
+// Colour scheme: the navbar button toggles light/dark and remembers the
+// choice. The initial class is applied inline in <head> to avoid a flash.
+// ---------------------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-    const nav = document.getElementById("siteNav");
+    const root = document.documentElement;
+    const toggle = document.getElementById("darkModeToggle");
+    const moon = document.getElementById("themeIconMoon");
+    const sun = document.getElementById("themeIconSun");
+    if (!toggle) return;
+
+    function syncThemeButton() {
+        const isDark = root.classList.contains("dark-mode");
+        toggle.setAttribute("aria-pressed", String(isDark));
+        toggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+        toggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+        if (moon) moon.hidden = isDark;
+        if (sun) sun.hidden = !isDark;
+    }
+
+    toggle.addEventListener("click", () => {
+        const isDark = root.classList.toggle("dark-mode");
+        try {
+            localStorage.setItem("spa-theme", isDark ? "dark" : "light");
+        } catch (e) { /* storage unavailable — theme just won't persist */ }
+        syncThemeButton();
+    });
+
+    syncThemeButton();
+});
+
+// ---------------------------------------------------------------------------
+// Navigation sidebar (slides in from the right).
+//   - opens from the navbar button, closes on the overlay, Escape or a link
+//   - while open, Tab/Shift+Tab stay inside the panel (focus trap)
+//   - ArrowUp/ArrowDown/Home/End move between the navigation links
+//   - closing returns focus to the button that opened it
+// ---------------------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.getElementById("navToggle");
-    const menu = document.getElementById("navMenu");
-    if (!nav || !toggle || !menu) return;
+    const sidebar = document.getElementById("navSidebar");
+    const overlay = document.getElementById("navOverlay");
+    const closeButton = document.getElementById("navClose");
+    if (!toggle || !sidebar || !overlay) return;
 
     const FOCUSABLE =
         'a[href], button:not([disabled]), input:not([disabled]), select, textarea, ' +
         '[tabindex]:not([tabindex="-1"])';
 
-    // Keep collapsed menu items out of the tab order even during the
-    // slide-down/up transition (visibility only kicks in after the delay).
-    menu.inert = true;
-
     let lastFocus = null;
 
+    function isOpen() {
+        return sidebar.classList.contains("active");
+    }
+
     function focusableItems() {
-        return Array.from(menu.querySelectorAll(FOCUSABLE)).filter(
+        return Array.from(sidebar.querySelectorAll(FOCUSABLE)).filter(
             (el) => el.getClientRects().length > 0
         );
     }
 
-    function openMenu() {
-        if (nav.classList.contains("open")) return;
+    function openSidebar() {
+        if (isOpen()) return;
         lastFocus = document.activeElement;
-        menu.inert = false;
-        nav.classList.add("open");
+        sidebar.inert = false;
+        sidebar.classList.add("active");
+        overlay.classList.add("active");
+        document.body.classList.add("nav-open");
         toggle.setAttribute("aria-expanded", "true");
-        const items = focusableItems();
-        if (items.length > 0) {
-            items[0].focus();
-        } else {
-            toggle.focus();
+        toggle.setAttribute("aria-label", "Close navigation");
+
+        // Move focus into the panel. The panel is only focusable once the
+        // browser has applied its visible state, so fall back to the next
+        // frame if the first attempt did not take.
+        const links = sidebar.querySelectorAll(".settings-link");
+        const target = links.length > 0 ? links[0] : closeButton;
+        if (!target) return;
+        const before = document.activeElement;
+        target.focus();
+        if (document.activeElement === before) {
+            requestAnimationFrame(() => target.focus());
         }
     }
 
-    function closeMenu(restoreFocus) {
-        if (!nav.classList.contains("open")) return;
-        nav.classList.remove("open");
+    function closeSidebar(restoreFocus) {
+        if (!isOpen()) return;
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+        document.body.classList.remove("nav-open");
         toggle.setAttribute("aria-expanded", "false");
-        menu.inert = true;
+        toggle.setAttribute("aria-label", "Open navigation");
+        sidebar.inert = true;
         if (restoreFocus) {
-            if (lastFocus && typeof lastFocus.focus === "function") {
-                lastFocus.focus();
-            } else {
-                toggle.focus();
-            }
+            const target = lastFocus && typeof lastFocus.focus === "function" ? lastFocus : toggle;
+            target.focus();
         }
         lastFocus = null;
     }
 
+    // Keep the panel out of the tab order while it is off-screen.
+    sidebar.inert = true;
+
     toggle.addEventListener("click", () => {
-        if (nav.classList.contains("open")) {
-            closeMenu(false); // focus already sits on the toggle
+        if (isOpen()) {
+            closeSidebar(false);
         } else {
-            openMenu();
+            openSidebar();
         }
     });
 
-    // Keyboard navigation inside the open panel:
-    //   - Tab / Shift+Tab cycle through the items (focus trap, no leaks)
-    //   - ArrowDown / ArrowUp / Home / End move through the links
-    menu.addEventListener("keydown", (event) => {
-        if (!nav.classList.contains("open")) return;
+    if (closeButton) {
+        closeButton.addEventListener("click", () => closeSidebar(true));
+    }
+
+    overlay.addEventListener("click", () => closeSidebar(true));
+
+    // Keyboard handling inside the open panel.
+    sidebar.addEventListener("keydown", (event) => {
+        if (!isOpen()) return;
         const items = focusableItems();
         if (items.length === 0) return;
 
         const first = items[0];
         const last = items[items.length - 1];
         const current = document.activeElement;
+        const links = Array.from(sidebar.querySelectorAll(".settings-link"));
+        const link = links.indexOf(current);
 
         if (event.key === "Tab") {
             if (
-                (event.shiftKey && (current === first || current === menu || current === toggle)) ||
-                (!event.shiftKey && (current === last || current === menu || current === toggle))
+                (event.shiftKey && (current === first || current === sidebar)) ||
+                (!event.shiftKey && current === last)
             ) {
                 event.preventDefault();
                 (event.shiftKey ? last : first).focus();
             }
         } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-            const index = items.indexOf(current);
-            if (index === -1) return;
+            if (link === -1 || links.length === 0) return;
             event.preventDefault();
             const step = event.key === "ArrowDown" ? 1 : -1;
-            items[(index + step + items.length) % items.length].focus();
-        } else if (event.key === "Home") {
+            links[(link + step + links.length) % links.length].focus();
+        } else if (event.key === "Home" && links.length > 0) {
             event.preventDefault();
-            first.focus();
-        } else if (event.key === "End") {
+            links[0].focus();
+        } else if (event.key === "End" && links.length > 0) {
             event.preventDefault();
-            last.focus();
+            links[links.length - 1].focus();
         }
     });
 
-    // Close after choosing a link (navigation will move focus to the new page).
-    menu.querySelectorAll("a").forEach((link) => {
-        link.addEventListener("click", () => closeMenu(false));
+    // Close after choosing a navigation link (the new page takes over focus).
+    sidebar.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => closeSidebar(false));
     });
 
-    // Close when clicking anywhere outside the menu, without stealing focus
-    // from whatever the user clicked.
-    document.addEventListener("click", (event) => {
-        if (!nav.contains(event.target)) closeMenu(false);
-    });
-
-    // Close on Escape and hand focus back to the toggle button.
+    // Escape closes the panel from anywhere and restores focus to the button.
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeMenu(true);
+        if (event.key === "Escape") closeSidebar(true);
     });
 });

@@ -2,10 +2,16 @@
 {% block title %}{{ student.student_code }}{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('home.students') }}" class="back-link">&larr; Back to students</a>
+<a href="{{ url_for('home.students') }}" class="back-link">
+    <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+    Back to students
+</a>
 
 <div class="page-header-row">
-    <h1>{{ student.student_code }}</h1>
+    <div class="page-head">
+        <h1>{{ student.student_code }}</h1>
+        <p>{{ module.label }}</p>
+    </div>
     <div class="row-actions">
         <form method="get" class="inline-form">
             <label for="student_switch">Switch student</label>
@@ -15,20 +21,26 @@
                 {% endfor %}
             </select>
         </form>
-        <a class="btn" href="{{ url_for('students.edit_student', student_code=student.student_code) }}">Edit details</a>
+        <a class="btn" href="{{ url_for('students.edit_student', student_code=student.student_code) }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+            Edit details
+        </a>
     </div>
 </div>
 
 <div class="card-row">
     <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
         <span class="stat-label">Current p-mark</span>
         <span class="stat-value">{{ student.p_mark_current|round(1) }}</span>
     </div>
     <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>
         <span class="stat-label">Minimum achievable</span>
         <span class="stat-value">{{ min_pmark }}</span>
     </div>
     <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-target"></use></svg></span>
         <span class="stat-label">Maximum achievable</span>
         <span class="stat-value">{{ max_pmark }}</span>
     </div>
@@ -36,19 +48,30 @@
 
 <div class="panel">
     <h2>Assessment breakdown</h2>
-    <table>
-        <thead><tr><th>Assessment</th><th>Weight</th><th>Mark</th><th>Status</th></tr></thead>
-        <tbody>
-            {% for a in student.assessments %}
-            <tr>
-                <td>{{ a.name }}</td>
-                <td>{{ (a.weight * 100)|round(1) }}%</td>
-                <td>{{ a.mark if a.completed else '—' }}</td>
-                <td>{{ 'completed' if a.completed else 'remaining' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Assessment</th><th>Weight</th><th>Mark</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for a in student.assessments %}
+                <tr>
+                    <td>{{ a.name }}</td>
+                    <td>{{ (a.weight * 100)|round(1) }}%</td>
+                    <td>{{ a.mark if a.completed else '—' }}</td>
+                    <td>
+                        {% if a.completed %}
+                            <span class="badge badge-ok">
+                                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                                Completed
+                            </span>
+                        {% else %}
+                            <span class="badge badge-muted">Remaining</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="panel">
@@ -58,7 +81,10 @@
         <input type="range" id="target_pct" name="target_pct" min="0" max="50" step="5"
                value="{{ target_pct }}" oninput="document.getElementById('target_pct_val').innerText = this.value">
         <span id="target_pct_val">{{ target_pct }}</span>%
-        <button type="submit">Generate plan</button>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
+            Generate plan
+        </button>
     </form>
 
     <p class="muted">Target p-mark: ~{{ target_pmark }}</p>
@@ -66,26 +92,28 @@
     {% if scenarios|length == 0 %}
         <p>No remaining assessments to plan for, or target is unreachable within the assumed mark scale.</p>
     {% else %}
-        <table>
-            <thead>
-                <tr>
-                    {% for a in student.assessments if not a.completed %}
-                        <th>{{ a.name }}</th>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        {% for a in student.assessments if not a.completed %}
+                            <th>{{ a.name }}</th>
+                        {% endfor %}
+                        <th>Resulting p-mark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scenario in scenarios %}
+                    <tr>
+                        {% for a in student.assessments if not a.completed %}
+                            <td>{{ scenario[a.name] }}</td>
+                        {% endfor %}
+                        <td>{{ scenario.resulting_pmark }}</td>
+                    </tr>
                     {% endfor %}
-                    <th>Resulting p-mark</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for scenario in scenarios %}
-                <tr>
-                    {% for a in student.assessments if not a.completed %}
-                        <td>{{ scenario[a.name] }}</td>
-                    {% endfor %}
-                    <td>{{ scenario.resulting_pmark }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

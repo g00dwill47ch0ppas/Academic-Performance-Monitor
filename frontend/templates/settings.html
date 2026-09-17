@@ -4,7 +4,7 @@
 {% block help %}
     <div class="help-step">
         <span class="help-step-num">1</span>
-        <span class="help-step-text"><strong>Pass threshold</strong> controls who is flagged at-risk &mdash; a student is at-risk if even their best-case p-mark stays below this value.</span>
+        <span class="help-step-text"><strong>Pass threshold</strong> controls who is flagged at-risk &mdash; a student is at-risk if even their best-case participation mark stays below this value.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>
@@ -12,7 +12,7 @@
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text"><strong>Summary</strong> downloads one row per student with current p-mark, min/max bounds and at-risk flag.</span>
+        <span class="help-step-text"><strong>Summary</strong> downloads one row per student with current participation mark, min/max bounds and at-risk flag.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
@@ -28,7 +28,7 @@
 
 <div class="panel">
     <h2>Pass threshold</h2>
-    <p class="muted">A student is flagged at-risk when even their best-case p-mark stays
+    <p class="muted">A student is flagged at-risk when even their best-case participation mark stays
     below this threshold.</p>
     <form method="post" action="{{ url_for('home.update_threshold') }}" class="inline-form">
         <label for="threshold">Pass threshold (%)</label>

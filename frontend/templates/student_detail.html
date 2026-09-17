@@ -31,12 +31,12 @@
 <div class="card-row">
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
-        <span class="stat-label">Current p-mark</span>
+        <span class="stat-label">Current participation mark</span>
         <span class="stat-value">{{ student.p_mark_current }}</span>
     </div>
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-min-max"></use></svg></span>
-        <span class="stat-label">Min / max p-mark</span>
+        <span class="stat-label">Min / max participation marks</span>
         <span class="stat-value">{{ min_pmark }} / {{ max_pmark }}</span>
     </div>
 </div>
@@ -79,7 +79,7 @@
 <div class="panel">
     <h2>Participation Plan (Algorithm 2)</h2>
     <form method="get" class="inline-form">
-        <label for="target_pct">Target improvement over current p-mark (%)</label>
+        <label for="target_pct">Target improvement over current participation mark (%)</label>
         <input type="range" id="target_pct" name="target_pct" min="0" max="50" step="5"
                value="{{ target_pct }}" oninput="document.getElementById('target_pct_val').innerText = this.value">
         <span id="target_pct_val">{{ target_pct }}</span>%
@@ -89,7 +89,7 @@
         </button>
     </form>
 
-    <p class="muted">Target p-mark: ~{{ target_pmark }}</p>
+    <p class="muted">Target participation mark: ~{{ target_pmark }}</p>
 
     {% if scenarios|length == 0 %}
         <p>No remaining assessments to plan for, or target is unreachable within the assumed mark scale.</p>
@@ -101,7 +101,7 @@
                         {% for a in student.assessments if not a.completed %}
                             <th>{{ a.name }}</th>
                         {% endfor %}
-                        <th>Resulting p-mark</th>
+                        <th>Resulting participation mark</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -122,7 +122,7 @@
 {% block help %}
     <div class="help-step">
         <span class="help-step-num">1</span>
-        <span class="help-step-text"><strong>Min / Max</strong> show the best- and worst-case p-mark this student could still reach, based on their completed assessments and a 0&ndash;100 range for the ones not written yet.</span>
+        <span class="help-step-text"><strong>Min / Max</strong> show the best- and worst-case participation marks this student could still reach, based on their completed assessments and a 0&ndash;100 range for the ones not written yet.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>

@@ -797,10 +797,19 @@ input[type="range"] {
     margin-bottom: 0;
 }
 
-.weight-form-list-inner {
+.weight-form-list .weight-form-list-inner {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+}
+
+.weight-range-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.25rem;
 }
 
 .weight-range-row {
@@ -810,8 +819,21 @@ input[type="range"] {
     flex-wrap: nowrap;
 }
 
+.weight-range-row .muted {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .weight-range-row input[type="number"] {
-    width: 4.5rem;
+    width: 4.8rem;
+    flex: 0 0 auto;
+}
+
+.weight-range-row input[type="number"]:first-of-type {
+    margin-right: 0.25rem;
 }
 
 /* ===========================

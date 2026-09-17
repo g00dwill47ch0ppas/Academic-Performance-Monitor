@@ -27,6 +27,7 @@ def optimise_weights(
     target_average: float,
     initial_weights: np.ndarray | None = None,
     lower_bounds: np.ndarray | None = None,
+    upper_bounds: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     mark_matrix: shape (n_students, n_assessments) of average marks per assessment.
@@ -35,6 +36,9 @@ def optimise_weights(
     lower_bounds: optional per-assessment minimum weight fractions (>= 0).
         When a lower bound is > 0 it becomes a >= lower_bounds[i] constraint so
         no assessment can be driven to 0.
+    upper_bounds: optional per-assessment maximum weight fractions (<= 1).
+        When a upper bound is < 1 it becomes a <= upper_bounds[i] constraint so
+        no assessment exceeds the requested maximum.
     Returns: array of shape (n_assessments,) — the optimised weight vector.
     """
     n_assessments = mark_matrix.shape[1]
@@ -52,6 +56,10 @@ def optimise_weights(
     if lower_bounds is not None:
         constraints.append(
             {"type": "ineq", "fun": lambda w, lb=lower_bounds: w - lb}
+        )
+    if upper_bounds is not None:
+        constraints.append(
+            {"type": "ineq", "fun": lambda w, ub=upper_bounds: ub - w}
         )
     bounds = [(0, 1) for _ in range(n_assessments)]
 

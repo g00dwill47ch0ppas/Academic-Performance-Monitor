@@ -388,30 +388,40 @@
         const closeBtn = document.getElementById('helpClose');
         if (!toggle || !panel) return;
 
-        function open() {
-            panel.hidden = false;
-            panel.setAttribute('aria-hidden', 'false');
-            toggle.setAttribute('aria-expanded', 'true');
-            setTimeout(() => panel.classList.add('open'), 10);
+        let openFlag = false;
+
+        function synchronize() {
+            if (openFlag) {
+                panel.hidden = false;
+                panel.setAttribute('aria-hidden', 'false');
+                toggle.setAttribute('aria-expanded', 'true');
+                setTimeout(() => panel.classList.add('open'), 10);
+            } else {
+                panel.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
+                setTimeout(() => {
+                    panel.hidden = true;
+                    panel.setAttribute('aria-hidden', 'true');
+                }, 180);
+            }
         }
 
-        function close() {
-            panel.classList.remove('open');
-            toggle.setAttribute('aria-expanded', 'false');
-            setTimeout(() => { panel.hidden = true; panel.setAttribute('aria-hidden', 'true'); }, 180);
-        }
+        function open() { if (!openFlag) { openFlag = true; synchronize(); } }
+        function close() { if (openFlag) { openFlag = false; synchronize(); } }
 
         toggle.addEventListener('click', function() {
-            if (panel.hidden) open(); else close();
+            if (openFlag) close(); else open();
         });
         if (closeBtn) closeBtn.addEventListener('click', close);
 
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !panel.hidden) close();
+            if (e.key === 'Escape' && openFlag) close();
         });
         document.addEventListener('click', function(e) {
-            if (!panel.hidden && !panel.contains(e.target) && e.target !== toggle) close();
+            if (openFlag && !panel.contains(e.target) && e.target !== toggle) close();
         });
+
+        toggle.setAttribute('aria-expanded', 'false');
     })();
     </script>
     {% block scripts %}{% endblock %}

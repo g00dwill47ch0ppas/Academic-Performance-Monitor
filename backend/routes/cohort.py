@@ -16,24 +16,33 @@ def active_module_or_redirect() -> tuple[Module | None, object | None]:
     return module, None
 
 
-def _parse_weight_ranges(module: Module, form: dict | None = None) -> dict[str, float]:
-    """Return {assessment_name: min_weight_fraction} from form or defaults.
+def _parse_weight_ranges(
+    module: Module, form: dict | None = None
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Return ({name: min_weight_fraction}, {name: max_weight_fraction}) from form or defaults.
 
-    Reads per-assessment lower bounds as percentages; missing entries fall back
-    to 0 (only used as an optional constraint — the algorithm still won't force
-    any weight if the bounds are left at zero).
+    Reads per-assessment minimum and maximum weights as percentages (0-100).
+    Missing entries fall back to 0 (min) and 1 (max) so the optimizer is only
+    constrained when the lecturer actually types a value.
     """
-    ranges: dict[str, float] = {}
+    mins: dict[str, float] = {}
+    maxs: dict[str, float] = {}
     if form is None:
         form = {}
     for a in module.assessments:
-        raw = (form.get(f"min_{a.name}") or "0").strip()
+        raw_min = (form.get(f"min_{a.name}") or "0").strip()
+        raw_max = (form.get(f"max_{a.name}") or "100").strip()
         try:
-            pct = float(raw)
+            pct_min = float(raw_min)
         except ValueError:
-            pct = 0.0
-        ranges[a.name] = max(0.0, min(1.0, pct / 100.0))
-    return ranges
+            pct_min = 0.0
+        try:
+            pct_max = float(raw_max)
+        except ValueError:
+            pct_max = 100.0
+        mins[a.name] = max(0.0, min(1.0, pct_min / 100.0))
+        maxs[a.name] = max(0.0, min(1.0, pct_max / 100.0))
+    return mins, maxs
 
 
 def _mark_matrix(module: Module) -> np.ndarray:
@@ -79,19 +88,31 @@ def cohort_planning():
             error = "This module has no students yet. Add students first."
         elif error is None:
             try:
-                weight_ranges = _parse_weight_ranges(module, request.form)
-                lower_bounds = np.array([weight_ranges[a.name] for a in module.assessments])
-                optimal_weights = optimise_weights(
-                    mark_matrix, target, current_weights, lower_bounds=lower_bounds
-                )
-                result_rows = [
-                    {
-                        "assessment": name,
-                        "current_weight": round(float(cw) * 100, 1),
-                        "proposed_weight": round(float(ow) * 100, 1),
-                    }
-                    for name, cw, ow in zip(assessment_names, current_weights, optimal_weights)
-                ]
+                lower_bounds_map, upper_bounds_map = _parse_weight_ranges(module, request.form)
+                for name, mx in upper_bounds_map.items():
+                    if mx < lower_bounds_map.get(name, 0.0) - 1e-9:
+                        flash(f"Max weight for '{name}' is below its min weight — fix the range.", "error")
+                        break
+                else:
+                    lower_bounds = np.array([lower_bounds_map[a.name] for a in module.assessments])
+                    upper_bounds = np.array([upper_bounds_map[a.name] for a in module.assessments])
+                    optimal_weights = optimise_weights(
+                        mark_matrix,
+                        target,
+                        current_weights,
+                        lower_bounds=lower_bounds,
+                        upper_bounds=upper_bounds,
+                    )
+                    result_rows = [
+                        {
+                            "assessment": name,
+                            "current_weight": round(float(cw) * 100, 1),
+                            "proposed_weight": round(float(ow) * 100, 1),
+                            "min_weight_pct": round(float(lower_bounds_map.get(a.name, 0.0) * 100), 1),
+                            "max_weight_pct": round(float(upper_bounds_map.get(a.name, 100.0) * 100), 1),
+                        }
+                        for name, cw, ow in zip(assessment_names, current_weights, optimal_weights)
+                    ]
             except ValueError as e:
                 error = str(e)
 
@@ -100,9 +121,7 @@ def cohort_planning():
     else:
         current_class_avg = 0.0
 
-    weight_ranges = weight_range_summary(
-        module
-    ) if module.assessments else {}
+    weight_ranges = weight_range_summary(module) if module.assessments else {}
 
     return render_template(
         "cohort_planning.html",

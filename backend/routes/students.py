@@ -166,6 +166,43 @@ def delete_student(student_code: str):
     return redirect(url_for("home.students"))
 
 
+@students_bp.route("/students/import", methods=["GET", "POST"])
+def student_csv_import():
+    """Bulk import students + marks from a CSV (one mark column per assessment)."""
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    if request.method == "POST":
+        file = request.files.get("import_file")
+        if not file or file.filename == "":
+            flash("Select a CSV file to import.", "error")
+            return redirect(url_for("students.student_csv_import"))
+        rows, error = parse_student_import_csv(module, file, file.filename)
+        if error:
+            flash(error, "error")
+            return redirect(url_for("students.student_csv_import"))
+        if not rows:
+            flash("No valid rows in the file.", "error")
+            return redirect(url_for("students.student_csv_import"))
+
+        added = 0
+        for entry in rows:
+            try:
+                data_store.add_student(module, entry["code"], entry["marks"])
+                added += 1
+            except ValueError as e:
+                flash(str(e), "error")
+        flash(f"Imported {added} student(s) from file.", "success")
+        return redirect(url_for("home.students"))
+
+    return render_template(
+        "student_csv_import.html",
+        module=module,
+        plan_count=len(module.assessments),
+    )
+
+
 @students_bp.route("/marks/import", methods=["POST"])
 def bulk_marks_import():
     module, response = active_module_or_redirect()

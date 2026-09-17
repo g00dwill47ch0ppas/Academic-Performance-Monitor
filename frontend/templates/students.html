@@ -11,6 +11,10 @@
         <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>
         Add student
     </a>
+    <a class="btn btn-secondary" href="{{ url_for('students.student_csv_import') }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+        Import students from CSV
+    </a>
 </div>
 
 {% if rows %}
@@ -78,10 +82,13 @@
     {% if not module.assessments %}
     <p>Tip: set up the assessment plan first, then add students with their marks.</p>
     {% endif %}
-    <div class="row-actions" style="margin-top:1rem">
-        <a class="btn" href="{{ url_for('students.add_student') }}">
+    <div class="row-actions" style="margin-top:1rem">        <a class="btn" href="{{ url_for('students.add_student') }}">
             <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>
             Add student
+        </a>
+        <a class="btn btn-secondary" href="{{ url_for('students.student_csv_import') }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+            Import students from CSV
         </a>
         <a class="btn btn-secondary" href="{{ url_for('modules.plan') }}">
             <svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>
@@ -94,19 +101,19 @@
 {% block help %}
     <div class="help-step">
         <span class="help-step-num">1</span>
-        <span class="help-step-text"><strong>Add</strong> a single student manually, or <strong>Import students</strong> from a CSV (student_code + one mark column per assessment).</span>
+        <span class="help-step-text"><strong>Add</strong> a single student manually, or use <strong>Import students from CSV</strong> above to add many at once.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>
-        <span class="help-step-text">Use <strong>Edit</strong> to change a student's code or marks; <strong>Remove</strong> deletes the student and their marks.</span>
+        <span class="help-step-text">For a CSV import, give a <code>student_code</code> and one mark column per assessment (<code>mark_0</code>, <code>mark_1</code>, ...) in plan order. Leave a mark blank if not written yet.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text"><strong>View</strong> opens the per-student detail page with min/max projections and participation plans.</span>
+        <span class="help-step-text">Use <strong>Edit</strong> to change a student's code or marks; <strong>Remove</strong> deletes the student and their marks.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
-        <span class="help-step-text">Students flagged at-risk have a red row &mdash; click <strong>View</strong> to investigate.</span>
+        <span class="help-step-text">Open the <strong>navigation panel</strong> (top-right button) to switch modules or reach the assessment plan and cohort planner.</span>
     </div>
 {% endblock %}
 {% endblock %}

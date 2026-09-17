@@ -1,25 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 
-{% block help %}
-    <div class="help-step">
-        <span class="help-step-num">1</span>
-        <span class="help-step-text"><strong>Read the headline stats</strong> above &mdash; class average, at-risk count and class size for {{ module.label }}.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">2</span>
-        <span class="help-step-text"><strong>Click an at-risk or class-size card</strong> to jump straight to that page.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">3</span>
-        <span class="help-step-text"><strong>Open the navigation panel</strong> (top-right button) to switch modules or reach the assessment plan and cohort planner.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">4</span>
-        <span class="help-step-text">Use the <strong>quick-actions row</strong> to enter marks, edit students or start cohort planning.</span>
-    </div>
-{% endblock %}
-
 {% block content %}
 <section class="hero">
     <div class="hero-content">

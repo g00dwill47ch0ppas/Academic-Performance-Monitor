@@ -54,25 +54,27 @@
     </div>
 
     {% if module.assessments %}
-    <p class="muted">Optional per-assessment minimum weights &mdash; these tell the
-    optimiser never to drop an assessment below the value you pick, so no
-    assessment ends up with a proposed weight of 0 unless you allow it.</p>
+    <p class="muted">Set optional per-assessment <strong>minimum</strong> and <strong>maximum</strong> weights
+    so the optimiser never drops an assessment below its min or raises it above its max.
+    Leave either field blank to use the default (0% minimum, 100% maximum).</p>
     <form method="post" class="weight-form-list">
         <div class="weight-form-list-inner">
             {% for a in module.assessments %}
             <div class="weight-range-row">
                 <span class="muted">{{ a.name }}</span>
                 <input type="number" name="min_{{ a.name }}" min="0" max="100" step="1"
-                       value="{{ (weight_ranges[a.name].get('min_weight', 0))|round(1) }}"
+                       value="{{ ((weight_ranges[a.name].get('min_weight', 0)) if weight_ranges else 0)|round(1) }}"
                        aria-label="Minimum weight for {{ a.name }} (%)">
-                <span class="muted">% min</span>
+                <input type="number" name="max_{{ a.name }}" min="0" max="100" step="1"
+                       value="{{ ((weight_ranges[a.name].get('max_weight', 100.0)) if weight_ranges else 100.0)|round(1) }}"
+                       aria-label="Maximum weight for {{ a.name }} (%)">
             </div>
             {% endfor %}
         </div>
         <div class="row-actions" style="margin-top:0.75rem">
-            <button type="submit">
+            <button type="submit" class="btn">
                 <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
-                Optimise weights
+                Optimise weights with ranges
             </button>
         </div>
     </form>
@@ -90,13 +92,21 @@
         <h3 style="margin-top:1.5rem">Proposed weight combination</h3>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Assessment</th><th>Current weight (%)</th><th>Proposed weight (%)</th></tr></thead>
+                <thead><tr>
+                    <th>Assessment</th>
+                    <th>Current weight (%)</th>
+                    <th>Proposed weight (%)</th>
+                    <th>Min (%)</th>
+                    <th>Max (%)</th>
+                </tr></thead>
                 <tbody>
                     {% for row in result_rows %}
                     <tr>
                         <td>{{ row.assessment }}</td>
                         <td>{{ row.current_weight }}</td>
                         <td>{{ row.proposed_weight }}</td>
+                        <td>{{ row.min_weight_pct }}</td>
+                        <td>{{ row.max_weight_pct }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

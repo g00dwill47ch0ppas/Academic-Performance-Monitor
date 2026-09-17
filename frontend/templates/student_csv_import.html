@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Import students from CSV{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('home.students') }}" class="back-link">
+    <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+    Back to students
+</a>
+
+<div class="page-head">
+    <h1>Import students from CSV</h1>
+    <p>{{ module.label }}</p>
+</div>
+
+<div class="panel">
+    <h2>Upload a CSV</h2>
+    <p class="muted">The file must contain a <code>student_code</code> column, plus one column per
+    assessment named <code>mark_0</code>, <code>mark_1</code>, ... in plan order.
+    Leave a mark blank if that assessment has not been written yet.</p>
+
+    {% if module.assessments %}
+    <p class="muted">This module currently has {{ plan_count }} assessment(s) in its plan,
+    so expect columns <code>mark_0</code> &hellip; <code>mark_{{ plan_count - 1 }}</code>.</p>
+    <div class="table-wrap" style="margin-top:0.75rem">
+        <table style="width:auto">
+            <thead><tr><th>#</th><th>Assessment</th><th>Expected column</th></tr></thead>
+            <tbody>
+                {% for a in module.assessments %}
+                <tr>
+                    <td>{{ loop.index0 }}</td>
+                    <td>{{ a.name }}</td>
+                    <td><code>mark_{{ loop.index0 }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">This module has no assessment plan yet &mdash; only student codes can be
+    imported until you add assessments under <em>Assessment plan</em>.</p>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="inline-form" style="margin-top:1rem">
+        <label for="import_file">Students file (.csv)</label>
+        <input type="file" id="import_file" name="import_file" accept=".csv" required>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+            Import students
+        </button>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>Example CSV</h2>
+    {% if module.assessments %}
+    <p class="muted">A file for a module with two assessments might look like this:</p>
+    <pre style="background:var(--tint);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;font-size:0.82rem;overflow-x:auto">student_code,mark_0,mark_1
+STU101,60,70
+STU102,,80
+STU103,55,</pre>
+    {% else %}
+    <p class="muted">A file for a module with no assessments only needs student codes:</p>
+    <pre style="background:var(--tint);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;font-size:0.82rem;overflow-x:auto">student_code
+STU101
+STU102
+STU103</pre>
+    {% endif %}
+</div>
+
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Download a sample CSV</strong> from the example above, or build one with a spreadsheet using the column names shown.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Each row is one student. The <strong>student_code</strong> must be an anonymised code &mdash; never real names.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Leave a mark cell blank wherever that assessment hasn't been written yet. The import will not fail on blank marks.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">If a student code already exists, the import will skip it and tell you which ones were added.</span>
+    </div>
+{% endblock %}
+{% endblock %}

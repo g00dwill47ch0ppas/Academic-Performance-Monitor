@@ -90,4 +90,23 @@
     </div>
 </div>
 {% endif %}
+
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Add</strong> a single student manually, or <strong>Import students</strong> from a CSV (student_code + one mark column per assessment).</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Use <strong>Edit</strong> to change a student's code or marks; <strong>Remove</strong> deletes the student and their marks.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text"><strong>View</strong> opens the per-student detail page with min/max projections and participation plans.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Students flagged at-risk have a red row &mdash; click <strong>View</strong> to investigate.</span>
+    </div>
+{% endblock %}
 {% endblock %}

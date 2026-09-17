@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Enter marks{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text">Pick the <strong>assessment</strong> whose marks you want to enter &mdash; the grid reloads for it automatically.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Type a mark (0&ndash;100) for each student, or leave it blank if they haven't written that assessment yet.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Click <strong>Save marks</strong> &mdash; each student's p-mark recalculates immediately.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Or use <strong>Import marks</strong> to upload a CSV with <code>assessment_name, student_code, mark</code> for one assessment at a time.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <a href="{{ url_for('home.students') }}" class="back-link">
     <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
@@ -77,6 +96,21 @@
             </button>
         </div>
     </form>
+
+    <div class="panel" style="margin-top:1.5rem">
+        <h2>Import marks from a CSV (same assessment)</h2>
+        <p class="muted">Upload a CSV with columns <code>assessment_name, student_code, mark</code>.
+        One assessment per file &mdash; blank marks are left as “not yet written”.</p>
+        <form method="post" action="{{ url_for('students.bulk_marks_import') }}" enctype="multipart/form-data" class="inline-form">
+            <input type="hidden" name="import_source" value="csv">
+            <label for="import_file">Marks file (.csv)</label>
+            <input type="file" id="import_file" name="import_file" accept=".csv" required>
+            <button type="submit">
+                <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                Import marks
+            </button>
+        </form>
+    </div>
 </div>
 {% else %}
 <div class="panel">
@@ -103,3 +137,5 @@
 </div>
 {% endif %}
 {% endblock %}
+
+

@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Edit {{ module.code }}{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text">Change the <strong>module code</strong> and/or <strong>name</strong> here. The plan and students are kept.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Renaming the code is allowed only if the new code is not already in use by another module.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Use <strong>Manage modules & import</strong> in the navigation panel to delete a module or import one from file.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <a href="{{ url_for('modules.list_modules') }}" class="back-link">
     <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
@@ -34,3 +49,5 @@
     The assessment plan and students are kept.</p>
 </div>
 {% endblock %}
+
+

@@ -134,6 +134,13 @@
                 <line x1="6" y1="6" x2="18" y2="18"/>
             </g>
         </symbol>
+        <symbol id="i-question" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </g>
+        </symbol>
         <symbol id="i-moon" viewBox="0 0 24 24">
             <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -348,12 +355,65 @@
         {% block content %}{% endblock %}
     </main>
 
+    <button type="button" class="help-button" id="helpToggle"
+            aria-label="Open page help" aria-expanded="false" aria-controls="helpPanel" title="Page help">
+        <svg class="icon" aria-hidden="true"><use href="#i-question"></use></svg>
+    </button>
+
+    <div class="help-panel" id="helpPanel" hidden role="dialog" aria-label="Page help">
+        <div class="help-card">
+            <div class="help-head">
+                <button type="button" class="help-close" id="helpClose"
+                        aria-label="Close help">
+                    <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+                </button>
+                <h3>How to use this page</h3>
+            </div>
+            <div class="help-body" id="helpBody">
+                {% block help %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         Research prototype — ITRI671 — G. O. G. Sebaetse (46997245),
         supervised by Prof. C. J. Kruger, NWU Potchefstroom Campus
     </footer>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+    (function() {
+        const toggle = document.getElementById('helpToggle');
+        const panel = document.getElementById('helpPanel');
+        const closeBtn = document.getElementById('helpClose');
+        if (!toggle || !panel) return;
+
+        function open() {
+            panel.hidden = false;
+            panel.setAttribute('aria-hidden', 'false');
+            toggle.setAttribute('aria-expanded', 'true');
+            setTimeout(() => panel.classList.add('open'), 10);
+        }
+
+        function close() {
+            panel.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            setTimeout(() => { panel.hidden = true; panel.setAttribute('aria-hidden', 'true'); }, 180);
+        }
+
+        toggle.addEventListener('click', function() {
+            if (panel.hidden) open(); else close();
+        });
+        if (closeBtn) closeBtn.addEventListener('click', close);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !panel.hidden) close();
+        });
+        document.addEventListener('click', function(e) {
+            if (!panel.hidden && !panel.contains(e.target) && e.target !== toggle) close();
+        });
+    })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

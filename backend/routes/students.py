@@ -1,4 +1,7 @@
-"""Per-student views for the active module: detail, and add/edit/remove."""
+"""Per-student views for the active module: detail, and add/edit/remove.
+
+Also supports bulk mark import from a CSV (one assessment per file) and bulk
+student + mark import from a CSV."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -6,6 +9,7 @@ from backend.algorithms.lp_bounds import compute_pmark_bounds
 from backend.algorithms.participation_plan import generate_participation_plan
 from backend.data.store import data_store
 from backend.models.student import Module
+from backend.routes.modules_helpers import parse_mark_import_csv, parse_student_import_csv
 
 students_bp = Blueprint("students", __name__)
 
@@ -59,21 +63,46 @@ def add_student():
         return response
 
     if request.method == "POST":
-        code = request.form.get("student_code", "").strip()
-        try:
-            marks = _parse_marks(module, request.form)
-            data_store.add_student(module, code, marks)
-        except ValueError as e:
-            flash(str(e), "error")
-            return render_template(
-                "student_form.html",
-                module=module,
-                student=None,
-                marks_raw=_mark_raw_list(module, request.form),
-                form_code=code,
-                form_action=url_for("students.add_student"),
-            )
-        flash(f"Student '{code}' added.", "success")
+        # Single-student form path.
+        if request.form.get("source") == "single":
+            code = request.form.get("student_code", "").strip()
+            try:
+                marks = _parse_marks(module, request.form)
+                data_store.add_student(module, code, marks)
+            except ValueError as e:
+                flash(str(e), "error")
+                return render_template(
+                    "student_form.html",
+                    module=module,
+                    student=None,
+                    marks_raw=_mark_raw_list(module, request.form),
+                    form_code=code,
+                    form_action=url_for("students.add_student"),
+                )
+            flash(f"Student '{code}' added.", "success")
+            return redirect(url_for("home.students"))
+
+        # Bulk CSV import path.
+        file = request.files.get("import_file")
+        if not file or file.filename == "":
+            flash("Select a CSV file to import.", "error")
+            return redirect(url_for("students.add_student"))
+        rows, error = parse_student_import_csv(module, file, file.filename)
+        if error:
+            flash(error, "error")
+            return redirect(url_for("students.add_student"))
+        if not rows:
+            flash("No valid rows in the file.", "error")
+            return redirect(url_for("students.add_student"))
+
+        added = 0
+        for entry in rows:
+            try:
+                data_store.add_student(module, entry["code"], entry["marks"])
+                added += 1
+            except ValueError as e:
+                flash(str(e), "error")
+        flash(f"Imported {added} student(s) from file.", "success")
         return redirect(url_for("home.students"))
 
     return render_template(
@@ -135,6 +164,45 @@ def delete_student(student_code: str):
     data_store.delete_student(module, student_code)
     flash(f"Student '{student_code}' removed.", "success")
     return redirect(url_for("home.students"))
+
+
+@students_bp.route("/marks/import", methods=["POST"])
+def bulk_marks_import():
+    module, response = active_module_or_redirect()
+    if response is not None:
+        return response
+
+    source = request.form.get("import_source", "")
+    if source == "csv":
+        file = request.files.get("import_file")
+        if not file or file.filename == "":
+            flash("Select a CSV file to import.", "error")
+            return redirect(url_for("students.bulk_marks"))
+        name, rows, error = parse_mark_import_csv(module, file, file.filename)
+        if error:
+            flash(error, "error")
+            return redirect(url_for("students.bulk_marks"))
+        if not rows:
+            flash("No valid rows in the file.", "error")
+            return redirect(url_for("students.bulk_marks"))
+
+        marks: dict[str, float | None] = {code: mark for code, mark in rows}
+        try:
+            data_store.set_assessment_marks(module, name, marks)
+        except ValueError as e:
+            flash(str(e), "error")
+        else:
+            applied = sum(1 for m in marks.values() if m is not None)
+            skipped = len(marks) - applied
+            flash(
+                f"Imported {applied} mark(s) for '{name}' across {len(marks)} student(s)"
+                + (f"; {skipped} left blank" if skipped else ""),
+                "success",
+            )
+        return redirect(url_for("students.bulk_marks", assessment=name))
+
+    flash("Unknown import source.", "error")
+    return redirect(url_for("students.bulk_marks"))
 
 
 @students_bp.route("/marks", methods=["GET", "POST"])

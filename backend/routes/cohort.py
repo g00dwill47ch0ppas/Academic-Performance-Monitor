@@ -4,6 +4,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from backend.algorithms.nlp_weights import optimise_weights
 from backend.data.store import data_store
 from backend.models.student import Module
+from backend.routes.cohort_helpers import weight_range_summary
 
 cohort_bp = Blueprint("cohort", __name__)
 
@@ -13,6 +14,26 @@ def active_module_or_redirect() -> tuple[Module | None, object | None]:
     if module is None:
         return None, redirect(url_for("modules.list_modules"))
     return module, None
+
+
+def _parse_weight_ranges(module: Module, form: dict | None = None) -> dict[str, float]:
+    """Return {assessment_name: min_weight_fraction} from form or defaults.
+
+    Reads per-assessment lower bounds as percentages; missing entries fall back
+    to 0 (only used as an optional constraint — the algorithm still won't force
+    any weight if the bounds are left at zero).
+    """
+    ranges: dict[str, float] = {}
+    if form is None:
+        form = {}
+    for a in module.assessments:
+        raw = (form.get(f"min_{a.name}") or "0").strip()
+        try:
+            pct = float(raw)
+        except ValueError:
+            pct = 0.0
+        ranges[a.name] = max(0.0, min(1.0, pct / 100.0))
+    return ranges
 
 
 def _mark_matrix(module: Module) -> np.ndarray:
@@ -58,7 +79,11 @@ def cohort_planning():
             error = "This module has no students yet. Add students first."
         elif error is None:
             try:
-                optimal_weights = optimise_weights(mark_matrix, target, current_weights)
+                weight_ranges = _parse_weight_ranges(module, request.form)
+                lower_bounds = np.array([weight_ranges[a.name] for a in module.assessments])
+                optimal_weights = optimise_weights(
+                    mark_matrix, target, current_weights, lower_bounds=lower_bounds
+                )
                 result_rows = [
                     {
                         "assessment": name,
@@ -75,6 +100,10 @@ def cohort_planning():
     else:
         current_class_avg = 0.0
 
+    weight_ranges = weight_range_summary(
+        module
+    ) if module.assessments else {}
+
     return render_template(
         "cohort_planning.html",
         module=module,
@@ -82,4 +111,5 @@ def cohort_planning():
         result_rows=result_rows,
         error=error,
         current_class_avg=current_class_avg,
+        weight_ranges=weight_ranges,
     )

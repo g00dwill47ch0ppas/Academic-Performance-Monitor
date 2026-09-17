@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Cohort Planning{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text">Set a <strong>target class average</strong> &mdash; the optimiser finds a weight combination that gets the class as close as possible to it.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Under <strong>Minimum weight (%)</strong> you can tell the optimiser never to drop any assessment below the value you type &mdash; so no assessment ends up with a proposed weight of 0 unless you allow it.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Press <strong>Optimise weights</strong> &mdash; the table shows the proposed spread next to what you already have.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">If the table is empty, the module may have no students or no assessments yet, or the target may be unreachable given the mark scale.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <section class="hero">
     <div class="hero-content">
@@ -26,16 +45,42 @@
 
 <div class="panel">
     <h2>Algorithm 3 &mdash; target class average</h2>
-    <form method="post" class="inline-form">
+
+    <div class="inline-form" style="margin-bottom:1rem">
         <label for="target_average">Target class average (%)</label>
         <input type="range" id="target_average" name="target_average" min="0" max="100" step="1"
                value="{{ target }}" oninput="document.getElementById('target_val').innerText = this.value">
         <span id="target_val">{{ target }}</span>%
-        <button type="submit">
-            <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
-            Optimise weights
-        </button>
+    </div>
+
+    {% if module.assessments %}
+    <p class="muted">Optional per-assessment minimum weights &mdash; these tell the
+    optimiser never to drop an assessment below the value you pick, so no
+    assessment ends up with a proposed weight of 0 unless you allow it.</p>
+    <form method="post" class="weight-form-list">
+        <div class="weight-form-list-inner">
+            {% for a in module.assessments %}
+            <div class="weight-range-row">
+                <span class="muted">{{ a.name }}</span>
+                <input type="number" name="min_{{ a.name }}" min="0" max="100" step="1"
+                       value="{{ (weight_ranges[a.name].get('min_weight', 0))|round(1) }}"
+                       aria-label="Minimum weight for {{ a.name }} (%)">
+                <span class="muted">% min</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="row-actions" style="margin-top:0.75rem">
+            <button type="submit">
+                <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
+                Optimise weights
+            </button>
+        </div>
     </form>
+    {% endif %}
+
+    {% if not module.assessments %}
+    <p class="muted">Add an assessment plan first so the optimiser has something to work with.</p>
+    {% endif %}
 
     {% if error %}
         <p class="flash flash-error">{{ error }}</p>
@@ -60,3 +105,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

@@ -23,3 +23,13 @@ def test_result_moves_average_toward_target():
     resulting_avg = (marks @ weights).mean()
 
     assert abs(resulting_avg - 70.0) <= abs(initial_avg - 70.0) + 1e-6
+
+
+def test_lower_bounds_are_respected():
+    marks = np.array([[80, 60], [70, 50], [90, 40]])
+    # Force the second assessment to carry at least 20%.
+    weights = optimise_weights(marks, target_average=65.0, lower_bounds=np.array([0.0, 0.2]))
+    assert np.all(weights >= 0) and np.all(weights <= 1) and np.isclose(weights.sum(), 1.0, atol=1e-4)
+    assert weights[1] >= 0.2 - 1e-6
+    resulting_avg = (marks @ weights).mean()
+    assert abs(resulting_avg - 65.0) <= 1.0

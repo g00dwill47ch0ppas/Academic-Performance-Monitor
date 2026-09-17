@@ -26,10 +26,15 @@ def optimise_weights(
     mark_matrix: np.ndarray,
     target_average: float,
     initial_weights: np.ndarray | None = None,
+    lower_bounds: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     mark_matrix: shape (n_students, n_assessments) of average marks per assessment.
     target_average: desired class average p-mark after reweighting.
+    initial_weights: starting point (uses uniform if omitted).
+    lower_bounds: optional per-assessment minimum weight fractions (>= 0).
+        When a lower bound is > 0 it becomes a >= lower_bounds[i] constraint so
+        no assessment can be driven to 0.
     Returns: array of shape (n_assessments,) — the optimised weight vector.
     """
     n_assessments = mark_matrix.shape[1]
@@ -44,6 +49,10 @@ def optimise_weights(
         return (class_pmarks.mean() - target_average) ** 2
 
     constraints = [{"type": "eq", "fun": lambda w: w.sum() - 1}]
+    if lower_bounds is not None:
+        constraints.append(
+            {"type": "ineq", "fun": lambda w, lb=lower_bounds: w - lb}
+        )
     bounds = [(0, 1) for _ in range(n_assessments)]
 
     result = minimize(objective, x0, method="SLSQP", bounds=bounds, constraints=constraints)

@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Assessment plan{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text">The <strong>assessment plan</strong> is the list of assessments that make up this module, each with a weight.
+        Weights usually sum to 100%.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text"><strong>Save</strong> a weight to recalculate every student's p-mark automatically. <strong>Remove</strong> deletes that assessment and all its marks.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">The <strong>Marked</strong> column shows how many students have written each assessment so far.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Add a new assessment below the plan &mdash; every existing student gets a blank “not yet written” entry for it.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <div class="page-header-row">
     <div class="page-head">
@@ -86,3 +106,5 @@
     {% endif %}
 </div>
 {% endblock %}
+
+

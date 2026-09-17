@@ -32,25 +32,27 @@
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
         <span class="stat-label">Current p-mark</span>
-        <span class="stat-value">{{ student.p_mark_current|round(1) }}</span>
+        <span class="stat-value">{{ student.p_mark_current }}</span>
     </div>
     <div class="stat-card">
-        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>
-        <span class="stat-label">Minimum achievable</span>
-        <span class="stat-value">{{ min_pmark }}</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-target"></use></svg></span>
-        <span class="stat-label">Maximum achievable</span>
-        <span class="stat-value">{{ max_pmark }}</span>
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-min-max"></use></svg></span>
+        <span class="stat-label">Min / max p-mark</span>
+        <span class="stat-value">{{ min_pmark }} / {{ max_pmark }}</span>
     </div>
 </div>
 
 <div class="panel">
-    <h2>Assessment breakdown</h2>
+    <h2>Marks per assessment</h2>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Assessment</th><th>Weight</th><th>Mark</th><th>Status</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Assessment</th>
+                    <th>Weight</th>
+                    <th>Mark</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
             <tbody>
                 {% for a in student.assessments %}
                 <tr>
@@ -116,4 +118,23 @@
         </div>
     {% endif %}
 </div>
+
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Min / Max</strong> show the best- and worst-case p-mark this student could still reach, based on their completed assessments and a 0&ndash;100 range for the ones not written yet.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">Choose a <strong>target improvement</strong> (%) to see what mark combinations on the remaining assessments would get there.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Use <strong>Edit details</strong> to change the student's code or marks, or <strong>Remove</strong> to delete them.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">The list of other student codes is for reference &mdash; use it to check who else is in this module.</span>
+    </div>
+{% endblock %}
 {% endblock %}

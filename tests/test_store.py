@@ -142,7 +142,18 @@ def test_set_assessment_marks_bulk(store: DataStore):
         store.set_assessment_marks(module, "Nope", {"STU001": 1.0})
 
 
-def test_export_round_trips_through_import(store: DataStore):
+def test_set_assessment_marks_bulk_allows_blanking(store: DataStore):
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+    store.add_student(module, "STU001", [60.0])
+
+    store.set_assessment_marks(module, "Test 1", {"STU001": None})
+    assert module.student_assessment(module.student("STU001"), "Test 1").mark is None
+    assert module.student_assessment(module.student("STU001"), "Test 1").completed is False
+
+
+def test_build_module_from_sample_csv(store: DataStore):
     """A module serialised to the long CSV format re-imports unchanged."""
     df = load_dataframe(str(SAMPLE_CSV), filename="sample_data.csv")
     module = DataStore.build_module_from_df("CS101", "Sample", df)
@@ -150,7 +161,120 @@ def test_export_round_trips_through_import(store: DataStore):
     exported = DataStore.module_to_dataframe(module)
     rebuilt = DataStore.build_module_from_df("CS101", "Sample", exported)
 
+def test_student_import_csv_shape(store: DataStore):
+    from backend.routes.modules_helpers import parse_student_import_csv
+
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+
+    import io
+
+    class _fs:
+        def __init__(self, stream, filename):
+            self.stream = stream
+            self.filename = filename
+
+    payload = (
+        "student_code,mark_0,mark_1\n"
+        "STU010,60,70\n"
+        "STU011,,80\n"
+    )
+    parsed, error = parse_student_import_csv(
+        module, _fs(io.BytesIO(payload.encode()), "import.csv"), "import.csv"
+    )
+    assert error is None
+    assert len(parsed) == 2
+    assert parsed[0]["code"] == "STU010"
+    assert parsed[0]["marks"] == [60.0, 70.0]
+    assert parsed[1]["code"] == "STU011"
+    assert parsed[1]["marks"] == [None, 80.0]
+
+
+def test_weight_range_summary_handles_student_assessment_lists(store: DataStore):
+    from backend.routes.cohort_helpers import weight_range_summary
+
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+    store.add_student(module, "STU001", [60.0, 70.0])
+    store.add_student(module, "STU002", [80.0, None])
+
+    summary = weight_range_summary(module)
+
+    assert set(summary) == {"Test 1", "Test 2"}
+    assert summary["Test 1"]["name"] == "Test 1"
+    assert summary["Test 1"]["weight"] == 50.0
+    assert "min_contribution" in summary["Test 1"]
+    assert "max_contribution" in summary["Test 1"]
+
+
+def test_mark_import_csv_shape(store: DataStore):
+    from backend.routes.modules_helpers import parse_mark_import_csv
+
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+
+    import io
+
+    class _fs:
+        def __init__(self, stream, filename):
+            self.stream = stream
+            self.filename = filename
+
+    payload = (
+        "assessment_name,student_code,mark\n"
+        "Test 1,STU001,60\n"
+        "Test 1,STU002,\n"
+    )
+    name, rows, error = parse_mark_import_csv(
+        module,
+        _fs(io.BytesIO(payload.encode()), "marks.csv"),
+        "marks.csv",
+    )
+    assert error is None, error
+    assert name == "Test 1"
+    assert len(rows) == 2
+    assert rows[0][1] == 60.0
+    assert rows[1][1] is None
+
+
+def test_student_import_csv_shape(store: DataStore):
+    from backend.routes.modules_helpers import parse_student_import_csv
+
+    module = store.create_module("MTHS111")
+    store.add_assessment(module, "Test 1", 0.5)
+    store.add_assessment(module, "Test 2", 0.5)
+
+    import io
+
+    class _fs:
+        def __init__(self, stream, filename):
+            self.stream = stream
+            self.filename = filename
+
+    payload = (
+        "student_code,mark_0,mark_1\n"
+        "STU010,60,70\n"
+        "STU011,,80\n"
+    )
+    parsed, error = parse_student_import_csv(
+        module, _fs(io.BytesIO(payload.encode()), "import.csv"), "import.csv"
+    )
+    assert error is None, error
+    assert len(parsed) == 2
+    assert parsed[0]["code"] == "STU010"
+    assert parsed[0]["marks"] == [60.0, 70.0]
+    assert parsed[1]["code"] == "STU011"
+    assert parsed[1]["marks"] == [None, 80.0]
+
+
+def test_export_round_trips_through_import(store: DataStore):
+    exported = DataStore.module_to_dataframe(store.create_module("CS101", "Sample"))
+    rebuilt = DataStore.build_module_from_df("CS101", "Sample", exported)
+
     assert list(exported.columns) == [
         "student_code", "assessment_name", "weight", "mark", "completed"
     ]
-    assert _snapshot(module) == _snapshot(rebuilt)
+    assert _snapshot(store.modules["CS101"]) == _snapshot(rebuilt)

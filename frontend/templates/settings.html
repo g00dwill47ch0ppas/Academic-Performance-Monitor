@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Pass threshold</strong> controls who is flagged at-risk &mdash; a student is at-risk if even their best-case p-mark stays below this value.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text"><strong>Export data</strong> downloads the module in the same CSV format the importer expects &mdash; you can edit it and re-import it.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text"><strong>Summary</strong> downloads one row per student with current p-mark, min/max bounds and at-risk flag.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text"><strong>Replace data</strong> overwrites the whole module from a file &mdash; the module code, name and thresholds are kept.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <div class="page-head">
     <h1>Settings</h1>
@@ -61,3 +80,5 @@
     </form>
 </div>
 {% endblock %}
+
+

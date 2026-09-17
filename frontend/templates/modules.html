@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Modules{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Open</strong> a module to work on it &mdash; the rest of the app follows the one you choose.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text"><strong>Create</strong> a new module by typing its code and name, or <strong>Import</strong> one from a CSV/XLSX file in the long format.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Each module keeps its own assessment plan, students and threshold &mdash; switching modules does not mix their data.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Use <strong>Export data</strong> or <strong>Export summary</strong> to download a copy of any module.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <div class="page-head">
     <h1>Modules</h1>
@@ -103,3 +122,5 @@
     </p>
 </div>
 {% endblock %}
+
+

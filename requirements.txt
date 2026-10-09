@@ -13,3 +13,6 @@ scipy
 
 # Testing
 pytest
+
+# Deployment
+gunicorn

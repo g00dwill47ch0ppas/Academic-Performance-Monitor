@@ -21,11 +21,6 @@
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('home.students') }}" class="back-link">
-    <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
-    Back to students
-</a>
-
 <div class="page-head">
     <h1>{{ 'Add student' if student is none else 'Edit student' }}</h1>
     <p>{{ module.label }}</p>

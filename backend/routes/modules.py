@@ -12,6 +12,7 @@ from backend.algorithms.lp_bounds import compute_pmark_bounds, is_at_risk
 from backend.data.loader import PIIValidationError
 from backend.data.store import DataStore, data_store
 from backend.models.student import Module
+from config import Config
 
 module_bp = Blueprint("modules", __name__)
 
@@ -41,19 +42,42 @@ def parse_weight_percent(raw: str) -> float:
 def list_modules():
     modules = data_store.module_list()
     active = data_store.active_module
-    return render_template("modules.html", modules=modules, active=active)
+    return render_template(
+        "modules.html",
+        modules=modules,
+        active=active,
+        default_pass_threshold=f"{Config.DEFAULT_PASS_THRESHOLD:g}",
+    )
+
+
+def parse_threshold_percent(raw: str) -> float:
+    """Parse a pass threshold typed as a percentage (0-100)."""
+    try:
+        percent = float(raw)
+    except (TypeError, ValueError):
+        raise ValueError("Pass threshold must be a number (percentage).") from None
+    if not 0 <= percent <= 100:
+        raise ValueError("Pass threshold must be between 0% and 100%.")
+    return percent
 
 
 @module_bp.route("/modules/create", methods=["POST"])
 def create_module():
     code = request.form.get("module_code", "").strip()
     name = request.form.get("module_name", "").strip()
+    raw_threshold = (request.form.get("module_threshold") or "").strip()
     try:
-        data_store.create_module(code, name)
+        threshold = parse_threshold_percent(raw_threshold) if raw_threshold else None
+        data_store.create_module(code, name, pass_threshold=threshold)
     except ValueError as e:
         flash(str(e), "error")
         return redirect(url_for("modules.list_modules"))
-    flash(f"Module '{data_store.active_module.label}' created.", "success")
+    module = data_store.active_module
+    flash(
+        f"Module '{module.label}' created with a {module.config.pass_threshold:g}% "
+        "pass threshold.",
+        "success",
+    )
     return redirect(url_for("home.home"))
 
 

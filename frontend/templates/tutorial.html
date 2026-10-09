@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Tutorial{% endblock %}
+
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Start / Replay tutorial</strong> walks you through the whole workflow on the live pages &mdash; it highlights what to click and waits for you to do it.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">You can <strong>skip a step</strong>, go <strong>back</strong>, or leave at any time. The tour remembers where you were, even when it moves you to another page.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">The full tour is long, so it is split into <strong>five parts</strong> &mdash; run just the one you need, or all of them in order.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Tick the box if you want the <strong>first-run welcome message</strong> to appear again on your next visit.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">5</span>
+        <span class="help-step-text">All data here is <strong>simulated and in memory</strong> &mdash; it resets when the app restarts. Never enter real student names, numbers or e-mail addresses.</span>
+    </div>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <span class="hero-badge">Guided tour</span>
+        <h1>Tutorial</h1>
+        <p>
+            A guided walk through the assistant &mdash; from creating a module to planning
+            the cohort's assessment weights. It runs on the real pages, with the real
+            (simulated) sample module.
+        </p>
+    </div>
+    <div class="hero-icon" aria-hidden="true">
+        <svg class="icon"><use href="#i-compass"></use></svg>
+    </div>
+</section>
+
+<div class="panel">
+    <h2>Replay the tour</h2>
+    <p class="muted">
+        The tour follows you across pages: it highlights the button or field to use,
+        explains why, and moves on once you have done it. Typing steps offer a
+        &ldquo;Fill an example for me&rdquo; button if you would rather not type.
+    </p>
+    <div class="row-actions tutorial-controls">
+        <button type="button" class="btn tour-primary" data-tour-start data-tour-start-route="/">
+            <svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg>
+            Start / Replay tutorial
+        </button>
+        <span class="muted">runs all 30 steps, from creating a module to planning weights</span>
+    </div>
+    <div class="row-actions tutorial-controls" style="margin-top:0.6rem">
+        <label class="tutorial-check">
+            <input type="checkbox" data-tour-reset-welcome>
+            <span>Show the welcome message again on my next visit</span>
+        </label>
+    </div>
+    <p class="muted" id="tourStatus" role="status" aria-live="polite"></p>
+</div>
+
+<div class="panel">
+    <h2>Or run just one part</h2>
+    <p class="muted">
+        Each part starts on the page it belongs to, keeps its own &ldquo;step x of y&rdquo;
+        counter and finishes on its own &mdash; so you can revisit one stage without
+        sitting through the rest.
+    </p>
+    <div class="tour-section-grid" data-tour-sections></div>
+    <noscript>
+        <p class="muted">The guided tour needs JavaScript; the workflow summary below
+        describes the same steps in words.</p>
+    </noscript>
+</div>
+
+<div class="panel">
+    <h2>What this system does</h2>
+    <ul class="tutorial-list">
+        <li><strong>Identifies at-risk students</strong> &mdash; it computes the best- and
+            worst-case participation mark each student can still reach, and flags anyone
+            whose best case cannot clear the module's pass threshold (Algorithm 1).</li>
+        <li><strong>Monitors class performance</strong> &mdash; the dashboard and cohort table
+            show the current class average, the class size and who needs attention.</li>
+        <li><strong>Plans for the cohort</strong> &mdash; it proposes the marks a student needs
+            on the assessments still to be written (Algorithm 2) and searches for a spread
+            of assessment weights that moves the class average towards a target you choose
+            (Algorithm 3).</li>
+    </ul>
+    <p class="muted">
+        Every model comes from Van der Merwe et al. (2018b) and runs in
+        <code>backend/algorithms/</code>; the pages only present their output.
+    </p>
+</div>
+
+<div class="panel">
+    <h2>The workflow, step by step</h2>
+    <ol class="tutorial-list tutorial-steps">
+        <li><strong>Create a module</strong> &mdash; a code, a name and the pass threshold that
+            decides at-risk flags.</li>
+        <li><strong>Define the assessment plan</strong> &mdash; add the assessments that make up
+            the participation mark and give each one a weight (they should total 100%).</li>
+        <li><strong>Add students and marks</strong> &mdash; one anonymised code per student, then
+            a mark per assessment (blank = not written yet). Use <em>Enter marks</em> to
+            capture a whole class in one pass.</li>
+        <li><strong>Read the dashboard</strong> &mdash; class average, at-risk count and class
+            size. The at-risk list and each student's page explain the indicators, including
+            the participation plan.</li>
+        <li><strong>Plan the cohort</strong> &mdash; set a target class average and a weight
+            range per assessment, then let the optimiser find the closest achievable spread.
+            Weights can never be zero.</li>
+    </ol>
+</div>
+
+<div class="panel tutorial-note">
+    <h2>Before you start</h2>
+    <p>
+        This is a research prototype for ITRI671. It holds its data <strong>in memory only</strong>:
+        everything resets when the app restarts, and nothing is written to disk. Please do not
+        enter real student names, student numbers, ID numbers or e-mail addresses &mdash; use
+        anonymised codes and the bundled simulated dataset
+        (<code>backend/data/sample_data.csv</code>).
+    </p>
+</div>
+{% endblock %}

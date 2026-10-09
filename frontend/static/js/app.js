@@ -13,6 +13,43 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Shared "Back" control (Task 1, rendered once in base.html).
+//   - if the user navigated here from another page of this app, go back in
+//     history (keeps filters/scroll state and avoids a redundant round trip)
+//   - otherwise follow the link's href, which is the page's logical parent
+// The href always stays usable, so the control still works without JS and for
+// middle-click / "open in new tab".
+// ---------------------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    const back = document.getElementById("pageBackLink");
+    if (!back) return;
+
+    back.addEventListener("click", (event) => {
+        // Respect modified clicks and any other handler that already acted.
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        let referrer = null;
+        try {
+            referrer = document.referrer ? new URL(document.referrer) : null;
+        } catch (e) {
+            referrer = null;
+        }
+
+        const cameFromApp =
+            referrer !== null &&
+            referrer.origin === window.location.origin &&
+            referrer.pathname !== window.location.pathname &&
+            window.history.length > 1;
+
+        if (cameFromApp) {
+            event.preventDefault();
+            window.history.back();
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Colour scheme: the navbar button toggles light/dark and remembers the
 // choice. The initial class is applied inline in <head> to avoid a flash.
 // ---------------------------------------------------------------------------

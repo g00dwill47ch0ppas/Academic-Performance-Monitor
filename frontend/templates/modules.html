@@ -8,7 +8,7 @@
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>
-        <span class="help-step-text"><strong>Create</strong> a new module by typing its code and name, or <strong>Import</strong> one from a CSV/XLSX file in the long format.</span>
+        <span class="help-step-text"><strong>Create</strong> a new module by typing its code, name and pass threshold (the mark below which a student is flagged at-risk), or <strong>Import</strong> one from a CSV/XLSX file in the long format.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
@@ -93,10 +93,17 @@
         <input type="text" id="module_code" name="module_code" placeholder="e.g. MTHS111" required>
         <label for="module_name">Module name</label>
         <input type="text" id="module_name" name="module_name" placeholder="e.g. Calculus 1">
-        <button type="submit">
+        <label for="module_threshold">Pass threshold (%)</label>
+        <input type="number" id="module_threshold" name="module_threshold" min="0" max="100"
+               step="1" placeholder="50" aria-describedby="module_threshold_hint">
+        <button type="submit" id="create-module-submit">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
             Create module
         </button>
+        <span class="muted" id="module_threshold_hint">
+            The mark that decides at-risk flags &mdash; leave blank for the default
+            ({{ default_pass_threshold }}%); you can change it later in Settings.
+        </span>
     </form>
 </div>
 

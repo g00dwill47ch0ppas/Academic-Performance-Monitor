@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial.css') }}">
     <script>
         // Apply the saved colour scheme before first paint to avoid a flash.
         try {
@@ -208,6 +209,12 @@
                 <polyline points="12 19 5 12 12 5"/>
             </g>
         </symbol>
+        <symbol id="i-compass" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </g>
+        </symbol>
         <symbol id="i-save" viewBox="0 0 24 24">
             <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
@@ -313,6 +320,14 @@
             </a>
             {% endif %}
 
+            <p class="settings-label">Help</p>
+            <a href="{{ url_for('tutorial.tutorial') }}"
+               class="settings-link{{ ' active' if request.endpoint == 'tutorial.tutorial' else '' }}"
+               {% if request.endpoint == 'tutorial.tutorial' %}aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg>
+                <span class="settings-link-text">Tutorial</span>
+            </a>
+
             {% if nav_module_items %}
             <p class="settings-label">Switch module</p>
             {% for item in nav_module_items %}
@@ -352,6 +367,40 @@
             {% endif %}
         {% endwith %}
 
+        {# Shared "Back" control (Task 1). It lives here once so every page inherits
+           it: clicking it goes to the previous page when the user arrived from
+           within the app (same-origin referrer), otherwise it follows the
+           logical parent below. Add a page to the map instead of copying markup. #}
+        {% if request.endpoint and request.endpoint != 'home.home' %}
+        {% set back_fallbacks = {
+            'home.at_risk': ('home.home', 'Overview'),
+            'home.students': ('home.home', 'Overview'),
+            'home.settings': ('home.home', 'Overview'),
+            'cohort.cohort_planning': ('home.home', 'Overview'),
+            'modules.plan': ('home.home', 'Overview'),
+            'modules.list_modules': ('home.home', 'Overview'),
+            'modules.create_module': ('modules.list_modules', 'Modules'),
+            'modules.edit_module': ('modules.list_modules', 'Modules'),
+            'modules.import_module': ('modules.list_modules', 'Modules'),
+            'students.add_student': ('home.students', 'Students'),
+            'students.edit_student': ('home.students', 'Students'),
+            'students.student_detail': ('home.students', 'Students'),
+            'students.bulk_marks': ('home.students', 'Students'),
+            'students.student_csv_import': ('home.students', 'Students'),
+            'students.bulk_marks_import': ('students.bulk_marks', 'Enter marks'),
+            'tutorial.tutorial': ('home.home', 'Overview'),
+        } %}
+        {% set back_parent = back_fallbacks.get(request.endpoint, ('home.home', 'Overview')) %}
+        <a class="back-link" id="pageBackLink"
+           href="{{ url_for(back_parent[0]) }}"
+           data-fallback-label="{{ back_parent[1] }}"
+           aria-label="Go back to the previous page"
+           title="Go back (goes to {{ back_parent[1] }} if you opened this page directly)">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Back
+        </a>
+        {% endif %}
+
         {% block content %}{% endblock %}
     </main>
 
@@ -381,6 +430,7 @@
     </footer>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
     <script>
     (function() {
         const toggle = document.getElementById('helpToggle');
@@ -417,8 +467,14 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && openFlag) close();
         });
+        // Clicking the button's inner <svg> must not count as an outside click —
+        // comparing e.target to the button itself made the panel open and then
+        // instantly close again (the toggle/close loop this fixes).
         document.addEventListener('click', function(e) {
-            if (openFlag && !panel.contains(e.target) && e.target !== toggle) close();
+            if (!openFlag) return;
+            if (panel.contains(e.target)) return;
+            if (toggle.contains(e.target)) return;
+            close();
         });
 
         toggle.setAttribute('aria-expanded', 'false');

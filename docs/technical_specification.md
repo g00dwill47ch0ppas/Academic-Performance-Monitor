@@ -102,10 +102,78 @@ store before any wider use.
 - **`backend/algorithms/participation_plan.py`** — Algorithm 2. Scenario enumeration
   for a target % improvement.
 - **`backend/algorithms/nlp_weights.py`** — Algorithm 3 (scipy). Cohort weight
-  optimisation for a target class average.
+  optimisation for a target class average, constrained by the lecturer's
+  per-assessment weight ranges. Public surface:
+  - `validate_weight_ranges(lower, upper, names)` — enforces min > 0, `min <= max` and
+    `sum(min) <= 1 <= sum(max)`, raising `WeightRangeError` with a message that names the
+    offender and states by how much it failed;
+  - `solve_weight_ranges(...) -> WeightSolution` — returns `status`
+    (`optimal` / `infeasible` / `failed`) plus a human-readable `message`, the weights and
+    the resulting class average. The returned vector is *verified* against the sum and
+    range constraints instead of trusting the solver's success flag;
+  - `optimise_weights(...)` — thin backwards-compatible wrapper returning just the vector
+    (used by the algorithm unit tests).
+  Only the constraint builder changed for the range-based UI; the published objective
+  (`minimise (class average − target)²`) is untouched.
 - **`backend/routes/home.py`** — `/` dashboard, `/threshold` (POST), `/upload` (POST).
 - **`backend/routes/students.py`** — `/student/<code>` detail view.
-- **`backend/routes/cohort.py`** — `/cohort` GET/POST what-if planning.
+- **`backend/routes/cohort.py`** — `/cohort` GET/POST weight planning. One form submits
+  the target average *and* every `min_<assessment>` / `max_<assessment>` field together;
+  the route parses them, validates the hard rules, applies the 1% floor, calls
+  `solve_weight_ranges` and renders the status, table and range chart. A blank field falls
+  back to the pre-filled default (the current weight ±10 points, clamped to the 1% floor
+  and 100%) rather than to zero, and a missing target field keeps the stored target.
+- **`frontend/static/js/cohort.js`** — the same rules again in the browser for immediate
+  feedback: it recomputes the sum of minimums/maximums on every keystroke, keeps the
+  number inputs and sliders in step, marks the offending field with `aria-invalid` and
+  disables *Calculate weights* while anything is invalid. The server remains the arbiter.
+- **`backend/routes/tutorial.py`** — `/tutorial`: the replay page (written workflow summary,
+  “Start / Replay tutorial”, and a control that restores the first-run welcome message).
+  The tour itself is client-side; this route only serves the page it is launched from.
+- **`frontend/templates/modules.html` + `backend/routes/modules.py`** — module creation also
+  accepts an optional pass threshold (`module_threshold`), validated 0–100 and stored on the
+  module's `ClassConfig`; blank falls back to `Config.DEFAULT_PASS_THRESHOLD`.
+
+### 5.1 Guided tutorial (`frontend/static/js/tutorial.js`, `css/tutorial.css`)
+
+Loaded from `base.html` on **every** page, because the tour moves between pages. It is
+entirely data-driven: one `STEPS` array holds, per step, the `route` it belongs to, the
+`selector` to highlight, the `action` that advances it (`click` / `type` / `select` /
+`submit` / `next`), the instructional text, an optional `hint`, `missing` text for when the
+target is not on the page, an optional `fill` example, and an `inMenu` flag for targets in
+the navigation panel. Each step also names the `section` it belongs to.
+
+- **Parts:** `SECTIONS` gives each section a title, a one-line blurb and an icon; a
+  section's first/last step are **derived from `STEPS`** (never hand-entered), so the
+  chooser on `/tutorial` renders straight from the same data and a step cannot fall
+  outside its part. Starting a part stores `dss_tutorial_section`, and every “Step n of m”
+  indicator, the `aria-live` announcement and the final “Finish part” button are computed
+  from that range rather than from the full step list — the whole tour is simply the range
+  with no section. A step that talks about the navigation panel keeps it open (the
+  `#navSidebar` selector counts as an in-panel target), otherwise the panel would close on
+  the step that explains it.
+
+- **Spotlight:** four fixed dim panels surround the target's bounding box, leaving a clear
+  hole, so only the highlighted element stays interactive. A single `requestAnimationFrame`
+  loop re-reads the target rect and re-positions the panels, the ring and the callout, which
+  is what keeps the hole glued to an element while the page scrolls or the side panel slides.
+- **Callout:** positioned next to the target, flipping between below/above/right/left by
+  available space, with an arrow on the edge facing the element and clamping to the viewport.
+- **Advancement:** document-level `click`, `input`, `change` and `submit` listeners compare
+  the event target against the current step's selector, so the step completes when the user
+  really does the thing. A short debounce on typing steps stops mid-word jumps, and the
+  re-render is deferred out of the click's dispatch so the tour never interferes with the
+  link or form being clicked. Typing steps offer a “Fill an example for me” helper.
+- **Persistence:** `sessionStorage` holds `dss_tutorial_active` and `dss_tutorial_step`; the
+  next index is written *before* a navigation, so the tour resumes on the following page.
+  `localStorage` holds `dss_tutorial_seen`, which suppresses the first-run welcome modal.
+- **Accessibility:** the callout is a labelled dialog that takes focus (except for typing
+  steps, where focus goes to the field), each step is announced through an `aria-live`
+  region, `Esc` exits, and every control is a real button.
+- **Harmless by design:** the tour submits only the module it is told to create; the
+  assessment, student and marks steps stop short of committing anything, so the bundled
+  CS101 dataset stays intact. The data note (memory-only, resets on restart, never enter
+  real student data) is shown on every step.
 
 ## 6. Non-Functional Implementation Notes
 
@@ -117,7 +185,19 @@ store before any wider use.
   accepting a column that could contain identifiable data. Deliberately specific
   patterns avoid false positives on legitimate columns like `assessment_name`.
 - **Testing:** each algorithm module has a corresponding file in `tests/` with
-  known-input/known-output cases, run independently of Flask routes.
+  known-input/known-output cases, run independently of Flask routes. Cohort planning has
+  both layers covered in `tests/test_cohort_planning.py`: the solver (sum = 100%, weights
+  inside their ranges, never zero, infeasible ranges reported as a status) and the route
+  (zero/negative minimums, `min > max`, minimums totalling more than 100%, maximums
+  totalling less than 100%, non-numeric input, and the missing-target regression).
+- **Shared chrome:** `frontend/templates/base.html` renders the navigation panel, the
+  *Back* control, the help panel and the tutorial assets once for every page. `app.js`
+  decides whether *Back* should walk browser history (same-origin referrer) or follow the
+  logical parent link (per-endpoint fallback map in `base.html`).
+- **Testing the tutorial:** the JavaScript tour is verified in the browser (first-run modal,
+  spotlight geometry, action-driven advancement, cross-page resume, final recap); the
+  server-rendered contract it depends on is covered by `tests/test_tutorial.py`, which also
+  walks every `route` in `STEPS` to catch a renamed page.
 
 ## 7. Deployment Plan
 

@@ -26,7 +26,7 @@ reference project.
 ```bash
 # 1. Clone and enter the repo
 git clone https://github.com/g00dwill47ch0ppas/Academic-Performance-Monitor.git
-cd lecturer-dss
+cd Academic-Performance-Monitor
 
 # 2. Create a virtual environment
 python -m venv .venv
@@ -53,10 +53,47 @@ Data lives only in server memory and is reset when the app restarts.
 pytest tests/ -v
 ```
 
+## Features
+
+- **Class dashboard** — cohort average, class size, at-risk count and a full cohort
+  table, all for the module the lecturer is currently working in.
+- **At-risk identification (Algorithm 1, PuLP)** — per-student best/worst-case
+  p-mark bounds against the module's pass threshold.
+- **Participation planning (Algorithm 2)** — feasible mark combinations for a
+  student to reach a target improvement on the assessments still to be written.
+- **Cohort planning (Algorithm 3, scipy SLSQP)** — the lecturer sets a target class
+  average and a weight *range* `[min%, max%]` per assessment; those ranges are the
+  constraints of the optimisation:
+  - every assessment keeps a strictly positive weight (a 1% floor is enforced),
+  - `min <= max` for each assessment,
+  - the weights must sum to exactly 100%, so `sum(min) <= 100 <= sum(max)` — the page
+    states exactly which condition fails and by how much,
+  - the page shows the live sum of minimums/maximums, disables *Calculate weights*
+    while the ranges are invalid, and always reports the solver's status
+    (optimal / infeasible / failed to converge) plus how close the target was reached,
+  - results are shown as a table and as bars comparing each proposed weight with the
+    range it was allowed to move in.
+- **Module management** — create/rename/delete/switch modules, edit the assessment
+  plan, import CSV/XLSX class data, export data and per-student summary.
+- **Consistent navigation** — a shared *Back* control on every page (returns to the
+  previous page when the lecturer came from inside the app, otherwise to the page's
+  logical parent) and a contextual help panel on every page.
+- **Guided tutorial + first-run welcome** — a first-visit popup explains what the system
+  does, then a spotlight tour (30 steps) walks through the whole workflow on the live
+  pages: create a module, define the assessment plan, add students and marks, read the
+  dashboard and at-risk indicators, and plan the cohort's weights. It advances when you
+  actually do the step, offers a “Fill an example for me” helper, survives page
+  navigation, and can be replayed any time from the menu (Tutorial) or the dedicated
+  **Tutorial** page, which also carries a written summary of the workflow. Too long to
+  sit through? The Tutorial page also lets you run **just one part** — create a module,
+  assessment plan, students & marks, results & at-risk, or cohort planning — each starting
+  on its own page with its own “step x of y” counter.
+- **Light/dark theme** remembered per browser; responsive layout down to phone widths.
+
 ## Project Structure
 
 ```
-lecturer-dss/
+Academic-Performance-Monitor/
 ├── app.py                     # entry point
 ├── config.py                  # environment-based configuration
 ├── backend/
@@ -69,8 +106,9 @@ lecturer-dss/
 │   ├── routes/                # home, students, cohort, modules blueprints
 │   └── data/                  # loader, in-memory store (modules), sample_data.csv
 ├── frontend/
-│   ├── templates/             # base.html + page templates
-│   └── static/{css,js}
+│   ├── templates/             # base.html (nav, back control, help panel) + pages
+│   └── static/{css,js}        # app.js (nav/theme/back), cohort.js (range checks),
+│                              # tutorial.js/.css (welcome + guided tour)
 └── tests/
 ```
 
@@ -89,8 +127,9 @@ reference project:
   tables, pill badges, and a light/dark colour-scheme toggle that is
   remembered per browser.
 
-Presentational only — every calculation remains in `backend/algorithms/`,
-untouched.
+Presentational only — every calculation remains in `backend/algorithms/`. The
+cohort-planning page only supplies the constraints (the lecturer's weight ranges);
+the published Algorithm 3 objective is unchanged.
 
 ## A note on the tech stack
 

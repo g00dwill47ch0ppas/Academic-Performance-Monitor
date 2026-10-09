@@ -1327,3 +1327,282 @@ code {
         display: none;
     }
 }
+
+/* ===========================================================
+   Cohort planning — weight ranges, solver status and results
+   (Task 2 rebuild: per-assessment [min%, max%] constraints)
+   =========================================================== */
+
+.weight-range-head,
+.weight-range-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 1.3fr) 3.6rem minmax(9rem, 1fr) minmax(9rem, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.weight-range-head {
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.weight-range-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.weight-range-now {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.weight-range-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.weight-range-control input[type="range"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    accent-color: var(--primary);
+}
+
+.weight-range-control input[type="number"] {
+    width: 4.6rem;
+    flex: 0 0 auto;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.weight-range-control input[type="number"][aria-invalid="true"] {
+    border-color: var(--danger);
+    background: var(--danger-tint);
+}
+
+.range-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.9rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-tint);
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.range-summary-item strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.range-summary-problem {
+    flex: 1 1 100%;
+    color: #a93226;
+    font-weight: 600;
+}
+
+.range-summary-ok {
+    flex: 1 1 100%;
+    color: #1e7a45;
+    font-weight: 600;
+}
+
+html.dark-mode .range-summary-problem {
+    color: #ff8a80;
+}
+
+html.dark-mode .range-summary-ok {
+    color: #6fcf97;
+}
+
+button[disabled],
+.btn[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+button[disabled]:hover,
+.btn[disabled]:hover {
+    transform: none;
+    box-shadow: none;
+    background: var(--primary);
+}
+
+.status-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid transparent;
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.25rem;
+}
+
+.status-banner p {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+}
+
+.status-banner .icon {
+    margin-top: 0.15rem;
+}
+
+.status-banner.status-optimal {
+    background: var(--success-tint);
+    border-color: #b7e4c9;
+    border-left-color: var(--success);
+    color: #1e7a45;
+}
+
+.status-banner.status-infeasible {
+    background: var(--danger-tint);
+    border-color: #f5c6c0;
+    border-left-color: var(--danger);
+    color: #a93226;
+}
+
+.status-banner.status-failed,
+.status-banner.status-partial {
+    background: #fdf3e3;
+    border-color: #f3d6a5;
+    border-left-color: var(--warning);
+    color: #8a5a08;
+}
+
+html.dark-mode .status-banner.status-optimal {
+    border-color: #2c5340;
+    color: #6fcf97;
+}
+
+html.dark-mode .status-banner.status-infeasible {
+    border-color: #5b2b26;
+    color: #ff8a80;
+}
+
+html.dark-mode .status-banner.status-failed,
+html.dark-mode .status-banner.status-partial {
+    background: #3a2f18;
+    border-color: #6b5527;
+    color: #f7c86a;
+}
+
+/* Horizontal range chart: shaded band = allowed range, marker = proposed. */
+
+.weight-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.weight-chart-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 10rem) minmax(0, 1fr) 4rem;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.weight-chart-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.weight-chart-track {
+    position: relative;
+    height: 14px;
+    border-radius: 7px;
+    background: var(--tint);
+    overflow: hidden;
+}
+
+.weight-chart-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(78, 42, 132, 0.28);
+}
+
+html.dark-mode .weight-chart-band {
+    background: rgba(245, 179, 1, 0.22);
+}
+
+.weight-chart-marker {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--card);
+    transform: translateY(-50%);
+}
+
+.weight-chart-value {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-legend {
+    margin: 0;
+}
+
+@media (max-width: 700px) {
+    /* Two stacked columns (min | max) with the name and current weight above,
+       so the labels stay meaningful once the sliders are hidden. */
+    .weight-range-head {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .weight-range-head span:nth-child(1),
+    .weight-range-head span:nth-child(2) {
+        display: none;
+    }
+
+    .weight-range-row {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 0.4rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .weight-range-name,
+    .weight-range-now {
+        grid-column: 1 / -1;
+    }
+
+    .weight-range-control input[type="range"] {
+        display: none;
+    }
+
+    .weight-chart-row {
+        grid-template-columns: minmax(0, 1fr) 4rem;
+    }
+
+    .weight-chart-track {
+        grid-column: 1 / -1;
+        order: 3;
+    }
+}

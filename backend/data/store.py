@@ -41,18 +41,35 @@ class DataStore:
     # ------------------------------------------------------------------ #
     # Module lifecycle
     # ------------------------------------------------------------------ #
-    def create_module(self, code: str, name: str = "", activate: bool = True) -> Module:
-        """Create a module. Raises ValueError on empty/duplicate codes."""
+    def create_module(
+        self,
+        code: str,
+        name: str = "",
+        activate: bool = True,
+        pass_threshold: float | None = None,
+    ) -> Module:
+        """Create a module. Raises ValueError on empty/duplicate codes or a bad threshold.
+
+        ``pass_threshold`` (percent) is optional and falls back to the configured
+        default; it can also be changed later from the Settings page.
+        """
         code = code.strip()
         if not code:
             raise ValueError("Module code cannot be empty.")
         if code in self.modules:
             raise ValueError(f"A module with code '{code}' already exists.")
+        threshold = (
+            Config.DEFAULT_PASS_THRESHOLD
+            if pass_threshold is None
+            else float(pass_threshold)
+        )
+        if not 0 <= threshold <= 100:
+            raise ValueError("Pass threshold must be between 0% and 100%.")
         module = Module(
             code=code,
             name=name.strip(),
             config=ClassConfig(
-                pass_threshold=Config.DEFAULT_PASS_THRESHOLD,
+                pass_threshold=threshold,
                 target_class_average=Config.DEFAULT_TARGET_CLASS_AVERAGE,
             ),
         )

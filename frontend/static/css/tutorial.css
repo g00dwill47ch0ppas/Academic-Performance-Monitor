@@ -1,0 +1,411 @@
+/* ===========================================================
+   Guided tutorial + first-run welcome
+   Vanilla JS companion: frontend/static/js/tutorial.js
+   =========================================================== */
+
+.tour-root {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    pointer-events: none; /* dim panels re-enable interaction themselves */
+}
+
+/* The four dim panels leave a hole exactly over the highlighted element, so the
+   rest of the page cannot be clicked while the tour is running. */
+.tour-dim {
+    position: fixed;
+    background: var(--tour-dim, rgba(20, 15, 32, 0.62));
+    pointer-events: auto;
+}
+
+.tour-highlight {
+    position: fixed;
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: 0 0 0 2px var(--accent, #F5B301), 0 0 0 6px rgba(245, 179, 1, 0.28),
+        0 10px 30px rgba(0, 0, 0, 0.35);
+    pointer-events: none; /* clicks fall through to the real element */
+    transition: opacity 0.15s ease;
+}
+
+.tour-callout {
+    position: fixed;
+    width: min(340px, calc(100vw - 32px));
+    padding: 0.9rem 1rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius, 14px);
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    pointer-events: auto;
+}
+
+.tour-callout:focus {
+    outline: none;
+}
+
+.tour-callout:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.tour-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.tour-progress {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.tour-exit {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tour-exit:hover {
+    background: var(--tint);
+    color: var(--primary);
+    transform: none;
+    box-shadow: none;
+}
+
+.tour-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+html.dark-mode .tour-title {
+    color: #cbb6ee;
+}
+
+.tour-text {
+    margin: 0 0 0.6rem;
+}
+
+.tour-hint {
+    margin: 0 0 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    background: var(--surface-tint);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+
+.tour-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.tour-btn {
+    padding: 0.42rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--primary);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tour-btn:hover {
+    background: var(--tint);
+    transform: none;
+    box-shadow: none;
+}
+
+.tour-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tour-next {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+
+.tour-next:hover {
+    background: var(--primary-dark);
+    color: #ffffff;
+}
+
+.tour-data-note {
+    margin: 0.6rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Arrow: a rotated square sitting on the edge nearest the highlighted element. */
+.tour-arrow {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transform: rotate(45deg);
+}
+
+.tour-arrow[data-side="bottom"] {
+    bottom: -7px;
+    border-top: none;
+    border-left: none;
+}
+
+.tour-arrow[data-side="top"] {
+    top: -7px;
+    border-bottom: none;
+    border-right: none;
+}
+
+.tour-arrow[data-side="left"] {
+    left: -7px;
+    border-top: none;
+    border-right: none;
+}
+
+.tour-arrow[data-side="right"] {
+    right: -7px;
+    border-bottom: none;
+    border-left: none;
+}
+
+.tour-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* --------------------------- First-run welcome --------------------------- */
+
+.tour-welcome-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(20, 15, 32, 0.7);
+}
+
+.tour-welcome {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    padding: 1.5rem 1.6rem 1.4rem;
+    border-radius: var(--radius, 14px);
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+}
+
+.tour-welcome h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: var(--primary);
+}
+
+html.dark-mode .tour-welcome h2 {
+    color: #cbb6ee;
+}
+
+.tour-welcome p {
+    margin: 0 0 0.75rem;
+}
+
+.tour-welcome ul {
+    margin: 0 0 1rem;
+    padding-left: 1.1rem;
+}
+
+.tour-welcome li {
+    margin-bottom: 0.3rem;
+}
+
+.tour-welcome-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.tour-primary {
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: #ffffff;
+}
+
+.tour-primary:hover {
+    background: var(--primary-dark);
+    color: #ffffff;
+}
+
+/* Glowing pulse on the one primary call to action. */
+@keyframes tour-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 179, 1, 0.65);
+    }
+    50% {
+        box-shadow: 0 0 0 12px rgba(245, 179, 1, 0);
+    }
+}
+
+.tour-glow {
+    animation: tour-glow 2.2s ease-in-out infinite;
+}
+
+.tour-skip-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.tour-skip-link:hover {
+    background: none;
+    color: var(--primary);
+    transform: none;
+    box-shadow: none;
+}
+
+/* ----------------------------- Tutorial page ----------------------------- */
+
+.tutorial-list {
+    margin: 0 0 0.5rem;
+    padding-left: 1.2rem;
+}
+
+.tutorial-list li {
+    margin-bottom: 0.55rem;
+}
+
+.tutorial-controls {
+    align-items: center;
+}
+
+.tutorial-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.tutorial-note {
+    border-left: 4px solid var(--accent);
+}
+
+/* Section label can be long ("STEP 3 OF 7 · ASSESSMENT PLAN"). */
+.tour-progress {
+    flex: 1 1 auto;
+    line-height: 1.35;
+}
+
+/* ------------------- Section chooser on /tutorial ------------------- */
+
+.tour-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.tour-section-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.95rem 1rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-tint);
+}
+
+.tour-section-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+html.dark-mode .tour-section-card h3 {
+    color: #cbb6ee;
+}
+
+.tour-section-card p {
+    margin: 0;
+}
+
+.tour-section-meta {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.tour-section-card button {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+}
+
+/* Transient message after finishing or leaving the tour. */
+.tour-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    z-index: 2200;
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: var(--shadow-lg);
+    font-size: 0.88rem;
+    transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tour-glow {
+        animation: none;
+    }
+
+    .tour-highlight,
+    .tour-callout,
+    .tour-welcome {
+        transition: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .tour-callout {
+        width: calc(100vw - 24px);
+    }
+}

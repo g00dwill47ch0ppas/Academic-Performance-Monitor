@@ -6,6 +6,8 @@ numpy
 PuLP
 openpyxl
 
+pip show pulp
+
 # Added beyond the reference stack, and why:
 # PuLP is LP/MILP-only and cannot express Algorithm 3's non-linear objective —
 # scipy is required to keep that model mathematically unmodified from the source paper.

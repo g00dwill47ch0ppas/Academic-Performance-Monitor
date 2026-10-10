@@ -3,10 +3,10 @@ Flask
 python-dotenv
 pandas
 numpy
-PuLP
+pulp>=3.0,<4
 openpyxl
 
-
+   
 
 # Added beyond the reference stack, and why:
 # PuLP is LP/MILP-only and cannot express Algorithm 3's non-linear objective —

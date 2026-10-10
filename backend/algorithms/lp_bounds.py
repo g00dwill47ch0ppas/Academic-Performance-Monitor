@@ -24,7 +24,7 @@ from backend.models.student import Assessment, Student
 def _solve(remaining: list[Assessment], sense) -> float:
     prob = pulp.LpProblem("pmark_bound", sense)
     variables = [
-        pulp.LpVariable(f"y_{i}", lowBound=0, upBound=100) for i in range(len(remaining))
+        pulp.LpVariable(f"y_{i}", 0, 100) for i in range(len(remaining))
     ]
     prob += pulp.lpSum(v * a.weight for v, a in zip(variables, remaining))
     prob.solve(pulp.PULP_CBC_CMD(msg=0))

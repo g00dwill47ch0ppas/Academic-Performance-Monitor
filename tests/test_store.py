@@ -7,6 +7,7 @@ import pytest
 
 from backend.data.loader import load_dataframe
 from backend.data.store import DataStore
+from backend.services.participation import analyse
 
 SAMPLE_CSV = Path(__file__).parent.parent / "backend" / "data" / "sample_data.csv"
 
@@ -95,16 +96,32 @@ def test_build_module_from_sample_csv(store: DataStore):
     df = load_dataframe(str(SAMPLE_CSV), filename="sample_data.csv")
     module = DataStore.build_module_from_df("CS101", "Sample", df)
 
-    assert len(module.assessments) == 6
+    # Four assessment types, nine items: two of the types drop marks.
+    assert [a.name for a in module.assessments] == [
+        "Class Test",
+        "Assignment",
+        "Practical",
+        "Attendance",
+    ]
+    assert [(a.items, a.count_best) for a in module.assessments] == [
+        (3, 2),
+        (2, 2),
+        (1, 1),
+        (12, 10),
+    ]
+    assert len(module.plan_items()) == 18
     assert len(module.students) == 15
-    assert all(len(s.assessments) == 6 for s in module.students)
-    # Completed assessments carry marks; remaining ones do not.
+    assert all(len(s.assessments) == 18 for s in module.students)
+
+    # The best 2 of the 3 class tests count, so the third mark is dropped.
     stu = module.student("STU001")
     assert stu is not None
     assert stu.assessments[0].mark == 66.1
     assert stu.assessments[0].completed is True
-    assert stu.assessments[3].mark is None and stu.assessments[3].completed is False
-    assert round(stu.p_mark_current, 2) == round(66.1 * 0.15 + 73.9 * 0.15 + 82.7 * 0.2, 2)
+    counts = analyse(stu.assessments)
+    class_tests = [r for r in counts.records if r.type_name == "Class Test"]
+    assert len(class_tests) == 3
+    assert sum(1 for r in class_tests if r.dropped) == 1
 
 
 def _snapshot(module):
@@ -191,24 +208,6 @@ def test_student_import_csv_shape(store: DataStore):
     assert parsed[1]["marks"] == [None, 80.0]
 
 
-def test_weight_range_summary_handles_student_assessment_lists(store: DataStore):
-    from backend.routes.cohort_helpers import weight_range_summary
-
-    module = store.create_module("MTHS111")
-    store.add_assessment(module, "Test 1", 0.5)
-    store.add_assessment(module, "Test 2", 0.5)
-    store.add_student(module, "STU001", [60.0, 70.0])
-    store.add_student(module, "STU002", [80.0, None])
-
-    summary = weight_range_summary(module)
-
-    assert set(summary) == {"Test 1", "Test 2"}
-    assert summary["Test 1"]["name"] == "Test 1"
-    assert summary["Test 1"]["weight"] == 50.0
-    assert "min_contribution" in summary["Test 1"]
-    assert "max_contribution" in summary["Test 1"]
-
-
 def test_mark_import_csv_shape(store: DataStore):
     from backend.routes.modules_helpers import parse_mark_import_csv
 
@@ -275,6 +274,34 @@ def test_export_round_trips_through_import(store: DataStore):
     rebuilt = DataStore.build_module_from_df("CS101", "Sample", exported)
 
     assert list(exported.columns) == [
-        "student_code", "assessment_name", "weight", "mark", "completed"
+        "student_code",
+        "assessment_name",
+        "weight",
+        "mark",
+        "completed",
+        "group",
+        "items",
+        "count_best",
+        "item_max",
     ]
     assert _snapshot(store.modules["CS101"]) == _snapshot(rebuilt)
+
+
+def test_export_round_trips_the_drop_rule(store: DataStore):
+    """Items, count-best and weights survive a full export/import round trip."""
+    module = store.create_module("MTHS111", "Algebra")
+    store.add_assessment(module, "Tests", 0.6, items=3, count_best=2)
+    store.add_assessment(module, "Attendance", 0.4, items=4, count_best=3)
+    store.add_student(module, "STU001", [60.0, 80.0, 50.0, 100.0, 100.0, 0.0, None])
+
+    exported = DataStore.module_to_dataframe(module)
+    rebuilt = DataStore.build_module_from_df("MTHS111", "Algebra", exported)
+
+    assert [(a.name, a.items, a.count_best) for a in rebuilt.assessments] == [
+        ("Tests", 3, 2),
+        ("Attendance", 4, 3),
+    ]
+    original = analyse(module.student("STU001").assessments)
+    round_tripped = analyse(rebuilt.student("STU001").assessments)
+    assert round_tripped.accrued == pytest.approx(original.accrued)
+    assert round_tripped.standing == pytest.approx(original.standing)

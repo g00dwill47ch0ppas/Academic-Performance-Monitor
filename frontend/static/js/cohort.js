@@ -25,9 +25,15 @@
 
     var rows = Array.prototype.slice.call(form.querySelectorAll(".weight-range-row"));
 
-    /** Format a percentage the way the server does: always one decimal place. */
+    /**
+     * Format a percentage exactly as the server does.
+     *
+     * fmt2() (frontend/static/js/format.js) is the single display-rounding helper:
+     * at most 2 decimals, half-up, no needless ".00". Falling back to String()
+     * keeps the validation usable if the helper file ever fails to load.
+     */
     function pct(value) {
-        return (Math.round(value * 10) / 10).toFixed(1);
+        return typeof window.fmt2 === "function" ? window.fmt2(value) : String(value);
     }
 
     function numberOf(input) {

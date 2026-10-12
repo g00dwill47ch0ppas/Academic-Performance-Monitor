@@ -65,6 +65,12 @@ def load_dataframe(path_or_buffer, filename: str) -> pd.DataFrame:
     df["completed"] = df["completed"].astype(str).str.strip().str.lower().isin(
         ["true", "1", "yes"]
     )
+
+    # A blank mark means "not written yet" and can never be complete — that is a
+    # different state from a recorded 0, which is a real mark. Keep the two
+    # consistent however the source file labelled the row.
+    blank = df["mark"].isna() | (df["mark"].astype(str).str.strip() == "")
+    df.loc[blank, "completed"] = False
     return df
 
 

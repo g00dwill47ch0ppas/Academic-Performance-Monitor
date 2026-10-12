@@ -9,7 +9,8 @@
         <p>
             {{ module.name or 'Module overview' }} &mdash; participation-mark performance for the
             whole class, including the best-case and worst-case projections for assessments
-            that have not been written yet.
+            that have not been written yet. Where an assessment type drops its weakest marks
+            (best N of M), those marks are left out of every figure.
         </p>
     </div>
     <div class="hero-icon" aria-hidden="true">
@@ -20,8 +21,13 @@
 <div class="card-row">
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
-        <span class="stat-label">Class average (current)</span>
-        <span class="stat-value">{{ class_average }}</span>
+        <span class="stat-label">Class average (participation so far)</span>
+        <span class="stat-value">{{ class_average|r2 }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-minus"></use></svg></span>
+        <span class="stat-label">Marks dropped (best N of M)</span>
+        <span class="stat-value">{{ dropped_count }}</span>
     </div>
     <a href="{{ url_for('home.at_risk') }}" class="stat-card {{ 'stat-card-risk' if at_risk_count else '' }}">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>

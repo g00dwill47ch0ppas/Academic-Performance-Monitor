@@ -12,7 +12,7 @@
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text"><strong>No assessment may be weighted to zero.</strong> Minimums must stay above {{ min_weight_pct }}% &mdash; the solver enforces a {{ min_weight_pct }}% floor even if you type 0.</span>
+        <span class="help-step-text"><strong>No assessment may be weighted to zero.</strong> Minimums must stay above {{ min_weight_pct|r2 }}% &mdash; the solver enforces a {{ min_weight_pct|r2 }}% floor even if you type 0.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
@@ -47,18 +47,18 @@
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-chart"></use></svg></span>
         <span class="stat-label">Current class average (existing weights)</span>
-        <span class="stat-value">{{ current_class_avg }}</span>
+        <span class="stat-value">{{ current_class_avg|r2 }}</span>
     </div>
     {% if solution and solution.ok %}
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-target"></use></svg></span>
         <span class="stat-label">Resulting average (proposed weights)</span>
-        <span class="stat-value">{{ solution.class_average }}</span>
+        <span class="stat-value">{{ solution.class_average|r2 }}</span>
     </div>
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
-        <span class="stat-label">Distance from target ({{ target }}%)</span>
-        <span class="stat-value">{{ solution.deviation }}</span>
+        <span class="stat-label">Distance from target ({{ target|r2 }}%)</span>
+        <span class="stat-value">{{ solution.deviation|r2 }}</span>
     </div>
     {% endif %}
 </div>
@@ -98,9 +98,9 @@
         <div class="inline-form" style="margin-bottom:1rem">
             <label for="target_average">Target class average (%)</label>
             <input type="range" id="target_average" name="target_average" min="0" max="100" step="1"
-                   value="{{ target }}" aria-describedby="target_hint"
+                   value="{{ target|r2 }}" aria-describedby="target_hint"
                    oninput="document.getElementById('target_val').innerText = this.value">
-            <span id="target_val">{{ target }}</span>%
+            <span id="target_val">{{ target|r2 }}</span>%
             <span class="muted" id="target_hint">&nbsp;the average the optimiser aims for</span>
         </div>
 
@@ -122,7 +122,7 @@
                 {% set r = ranges[a.name] %}
                 <div class="weight-range-row" data-assessment="{{ a.name }}">
                     <span class="weight-range-name" title="{{ a.name }}">{{ a.name }}</span>
-                    <span class="weight-range-now muted">{{ r.current }}%</span>
+                    <span class="weight-range-now muted">{{ r.current|r2 }}%</span>
 
                     <div class="weight-range-control">
                         <input type="range" min="0" max="100" step="0.5" value="{{ r.min }}"
@@ -145,8 +145,8 @@
         </div>
 
         <div class="range-summary" id="rangeSummary" aria-live="polite">
-            <span class="range-summary-item">Sum of minimums: <strong id="sumMin">{{ sum_min }}%</strong></span>
-            <span class="range-summary-item">Sum of maximums: <strong id="sumMax">{{ sum_max }}%</strong></span>
+            <span class="range-summary-item">Sum of minimums: <strong id="sumMin">{{ sum_min|r2 }}%</strong></span>
+            <span class="range-summary-item">Sum of maximums: <strong id="sumMax">{{ sum_max|r2 }}%</strong></span>
             <span class="range-summary-problem" id="rangeProblem" hidden></span>
             <span class="range-summary-ok" id="rangeOk" hidden>Ranges are valid &mdash; they can add up to 100%.</span>
         </div>
@@ -196,15 +196,15 @@
                 {% for row in result_rows %}
                 <tr>
                     <td>{{ row.assessment }}</td>
-                    <td>{{ row.current_weight }}</td>
-                    <td><strong>{{ row.proposed_weight }}</strong></td>
+                    <td>{{ row.current_weight|r2 }}</td>
+                    <td><strong>{{ row.proposed_weight|r2 }}</strong></td>
                     <td>
-                        {{ row.min_weight_pct }}
+                        {{ row.min_weight_pct|r2 }}
                         {% if row.floor_applied %}
-                            <span class="muted">({{ min_weight_pct }}% floor applied)</span>
+                            <span class="muted">({{ min_weight_pct|r2 }}% floor applied)</span>
                         {% endif %}
                     </td>
-                    <td>{{ row.max_weight_pct }}</td>
+                    <td>{{ row.max_weight_pct|r2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -217,12 +217,12 @@
         <div class="weight-chart-row">
             <span class="weight-chart-label" title="{{ row.assessment }}">{{ row.assessment }}</span>
             <div class="weight-chart-track" role="img"
-                 aria-label="{{ row.assessment }}: proposed {{ row.proposed_weight }}%, allowed {{ row.min_weight_pct }}% to {{ row.max_weight_pct }}%">
+                 aria-label="{{ row.assessment }}: proposed {{ row.proposed_weight|r2 }}%, allowed {{ row.min_weight_pct|r2 }}% to {{ row.max_weight_pct|r2 }}%">
                 <span class="weight-chart-band"
-                      style="left: {{ row.min_weight_pct }}%; width: {{ (row.max_weight_pct - row.min_weight_pct) if row.max_weight_pct > row.min_weight_pct else 1 }}%"></span>
-                <span class="weight-chart-marker" style="left: {{ row.proposed_weight }}%"></span>
+                      style="left: {{ row.min_weight_pct|r2 }}%; width: {{ (row.max_weight_pct - row.min_weight_pct)|r2 if row.max_weight_pct > row.min_weight_pct else 1 }}%"></span>
+                <span class="weight-chart-marker" style="left: {{ row.proposed_weight|r2 }}%"></span>
             </div>
-            <span class="weight-chart-value">{{ row.proposed_weight }}%</span>
+            <span class="weight-chart-value">{{ row.proposed_weight|r2 }}%</span>
         </div>
         {% endfor %}
         <p class="muted chart-legend">

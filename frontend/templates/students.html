@@ -25,9 +25,11 @@
             <thead>
                 <tr>
                     <th>Student</th>
-                    <th>Current participation mark</th>
+                    <th>Participation so far</th>
+                    <th>Standing</th>
                     <th>Min</th>
                     <th>Max</th>
+                    <th>Dropped</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -36,9 +38,20 @@
                 {% for row in rows %}
                 <tr class="{{ 'at-risk-row' if row.at_risk else '' }}">
                     <td>{{ row.student_code }}</td>
-                    <td>{{ row.current_pmark }}</td>
-                    <td>{{ row.min_pmark }}</td>
-                    <td>{{ row.max_pmark }}</td>
+                    <td>{{ row.accrued|r2 }}</td>
+                    <td>{{ row.standing|r2 }}</td>
+                    <td>{{ row.min_pmark|r2 }}</td>
+                    <td>{{ row.max_pmark|r2 }}</td>
+                    <td>
+                        {% if row.dropped_count %}
+                            <span class="badge badge-dropped"
+                                  title="The weakest marks of a &ldquo;best N of M&rdquo; type are dropped and do not count.">
+                                {{ row.dropped_count }}
+                            </span>
+                        {% else %}
+                            <span class="muted">&mdash;</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if row.at_risk %}
                             <span class="badge badge-danger">

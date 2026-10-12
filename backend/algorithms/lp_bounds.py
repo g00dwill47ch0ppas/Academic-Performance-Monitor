@@ -1,51 +1,42 @@
 """
-Algorithm 1 — Linear Programming bounds on a student's achievable p-mark.
+Algorithm 1 — min/max bounds on a student's achievable participation mark.
 
-Based on Van der Merwe et al. (2018b). Given a student's completed assessment
-marks/weights and the weights of remaining (not-yet-written) assessments, this
-computes the minimum and maximum p-mark the student could still achieve.
+Based on Van der Merwe et al. (2018b), which bounds each remaining assessment's
+mark in [0, 100] and solves two LPs over the weighted sum.
 
-Uses PuLP (matching this project's tech stack) with the bundled CBC solver.
+Since droppable assessments ("best N of M") were added, the feasible set is no
+longer a box that a plain LP can describe: which assessments *count* depends on
+the ranking of the marks, so the objective is piecewise-linear. The extrema are
+nevertheless exact and closed-form, so this module no longer asks a solver to
+rediscover arithmetic:
 
-# TODO: confirm against source paper —
-#   1. Are remaining marks bounded [0, 100], or does the module use a different scale?
-#   2. Is there a cross-assessment constraint (e.g. marks summing to a cap), or is
-#      each remaining assessment mark independently bounded?
-This implementation assumes independent bounds of [0, 100] per remaining
-assessment — the simplest faithful reading of an LP over a weighted sum with no
-coupling constraints.
+    min = the accrued mark  (every remaining item scores 0 and the lows are
+          then dropped, so no achievable mark can be lower)
+    max = the top N of (completed marks + 100% for every remaining item),
+          because a strong remaining item may displace a dropped one
+
+Both come from ``backend.services.participation`` — the single place the drop
+rule lives. There is deliberately no duplicated bound logic here; any route,
+export or template that needs a range calls these functions or the service.
+
+# TODO: confirm against source paper — Van der Merwe et al. (2018b) formulate the
+# bounds as two LPs over independent [0, 100] marks per remaining assessment.
+# That formulation is a special case of the closed form used here (it is what
+# this returns when every type has N = M, i.e. nothing is dropped). The paper does
+# not cover droppable assessments, so the drop extension is this artefact's own
+# and is flagged rather than presented as the published model.
 """
 
-import pulp
-
 from backend.models.student import Assessment, Student
-
-
-def _solve(remaining: list[Assessment], sense) -> float:
-    prob = pulp.LpProblem("pmark_bound", sense)
-    variables = [
-        pulp.LpVariable(f"y_{i}", 0, 100) for i in range(len(remaining))
-    ]
-    prob += pulp.lpSum(v * a.weight for v, a in zip(variables, remaining))
-    prob.solve(pulp.PULP_CBC_CMD(msg=0))
-    return pulp.value(prob.objective)
+from backend.services.participation import min_max_final
 
 
 def compute_pmark_bounds(assessments: list[Assessment]) -> tuple[float, float]:
-    """Returns (min_pmark, max_pmark) for a single student."""
-    fixed_contribution = sum(
-        a.mark * a.weight for a in assessments if a.completed and a.mark is not None
-    )
-    remaining = [a for a in assessments if not a.completed]
+    """Returns (min_pmark, max_pmark) for a single student.
 
-    if not remaining:
-        # Nothing left to optimise — p-mark is fixed.
-        return round(fixed_contribution, 2), round(fixed_contribution, 2)
-
-    min_val = fixed_contribution + _solve(remaining, pulp.LpMinimize)
-    max_val = fixed_contribution + _solve(remaining, pulp.LpMaximize)
-
-    return round(min_val, 2), round(max_val, 2)
+    Full precision — callers round at the output edge (Jinja ``|r2`` / ``fmt2``).
+    """
+    return min_max_final(assessments)
 
 
 def is_at_risk(max_pmark: float, pass_threshold: float) -> bool:

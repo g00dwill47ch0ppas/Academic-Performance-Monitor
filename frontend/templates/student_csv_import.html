@@ -13,17 +13,20 @@
     assessment named <code>mark_0</code>, <code>mark_1</code>, ... in plan order.
     Leave a mark blank if that assessment has not been written yet.</p>
 
-    {% if module.assessments %}
-    <p class="muted">This module currently has {{ plan_count }} assessment(s) in its plan,
+    {% if plan_items %}
+    <p class="muted">This module currently has {{ plan_count }} assessment item(s) in its plan,
     so expect columns <code>mark_0</code> &hellip; <code>mark_{{ plan_count - 1 }}</code>.</p>
     <div class="table-wrap" style="margin-top:0.75rem">
         <table style="width:auto">
-            <thead><tr><th>#</th><th>Assessment</th><th>Expected column</th></tr></thead>
+            <thead><tr><th>#</th><th>Assessment item</th><th>Type</th><th>Expected column</th></tr></thead>
             <tbody>
-                {% for a in module.assessments %}
+                {% for a in plan_items %}
                 <tr>
                     <td>{{ loop.index0 }}</td>
                     <td>{{ a.name }}</td>
+                    <td>
+                        {% if a.items > 1 %}{{ a.group }} (best {{ a.count_best }} of {{ a.items }}){% else %}&mdash;{% endif %}
+                    </td>
                     <td><code>mark_{{ loop.index0 }}</code></td>
                 </tr>
                 {% endfor %}
@@ -47,7 +50,7 @@
 
 <div class="panel">
     <h2>Example CSV</h2>
-    {% if module.assessments %}
+    {% if plan_items %}
     <p class="muted">A file for a module with two assessments might look like this:</p>
     <pre style="background:var(--tint);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;font-size:0.82rem;overflow-x:auto">student_code,mark_0,mark_1
 STU101,60,70
@@ -73,7 +76,7 @@ STU103</pre>
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text">Leave a mark cell blank wherever that assessment hasn't been written yet. The import will not fail on blank marks.</span>
+        <span class="help-step-text">Leave a mark cell blank wherever that item hasn't been written yet. Blank means “not written yet” — never enter 0 for a blank, because a recorded 0 counts as a real mark.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>

@@ -6,7 +6,7 @@
     <h1>At-risk students</h1>
     <p>
         Students whose best-case participation mark cannot reach the module threshold of
-        {{ '%g'|format(threshold) }}%.
+        {{ threshold|r2 }}%.
     </p>
 </div>
 
@@ -26,7 +26,8 @@
                 <thead>
                     <tr>
                         <th>Student</th>
-                        <th>Current participation mark</th>
+                        <th>Participation so far</th>
+                        <th>Standing</th>
                         <th>Min</th>
                         <th>Max</th>
                         <th>Status</th>
@@ -37,9 +38,10 @@
                     {% for row in at_risk_rows|sort(attribute='max_pmark') %}
                     <tr class="at-risk-row">
                         <td>{{ row.student_code }}</td>
-                        <td>{{ row.current_pmark }}</td>
-                        <td>{{ row.min_pmark }}</td>
-                        <td>{{ row.max_pmark }}</td>
+                        <td>{{ row.accrued|r2 }}</td>
+                        <td>{{ row.standing|r2 }}</td>
+                        <td>{{ row.min_pmark|r2 }}</td>
+                        <td>{{ row.max_pmark|r2 }}</td>
                         <td>
                             <span class="badge badge-danger">
                                 <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>

@@ -4,20 +4,24 @@
 {% block help %}
     <div class="help-step">
         <span class="help-step-num">1</span>
-        <span class="help-step-text">The <strong>assessment plan</strong> is the list of assessments that make up this module, each with a weight.
+        <span class="help-step-text">The <strong>assessment plan</strong> is the list of assessment types that make up this module, each with a weight.
         Weights usually sum to 100%.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>
-        <span class="help-step-text"><strong>Save</strong> a weight to recalculate every student's participation mark automatically. <strong>Remove</strong> deletes that assessment and all its marks.</span>
+        <span class="help-step-text">A type can hold several <strong>items</strong> (3 class tests, 12 attendance sessions). Set how many <strong>count</strong> and the best ones are kept: “best 2 of 3” drops the weakest mark automatically.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text">The <strong>Marked</strong> column shows how many students have written each assessment so far.</span>
+        <span class="help-step-text">Each counted item is worth <strong>weight ÷ count-best</strong> of the final mark, so unfilled slots simply contribute nothing yet.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
-        <span class="help-step-text">Add a new assessment below the plan &mdash; every existing student gets a blank “not yet written” entry for it.</span>
+        <span class="help-step-text"><strong>Save</strong> a row to recalculate every student's participation mark automatically. <strong>Remove</strong> deletes that type and all its marks.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">5</span>
+        <span class="help-step-text">Add a new assessment below the plan &mdash; every existing student gets a blank “not yet written” entry for each of its items.</span>
     </div>
 {% endblock %}
 
@@ -25,22 +29,35 @@
 <div class="page-header-row">
     <div class="page-head">
         <h1>Assessment plan</h1>
-        <p>{{ module.assessments|length }} assessment{{ 's' if module.assessments|length != 1 else '' }} in {{ module.label }}</p>
+        <p>{{ module.assessments|length }} assessment type{{ 's' if module.assessments|length != 1 else '' }}
+           ({{ module.plan_items()|length }} item{{ 's' if module.plan_items()|length != 1 else '' }}) in {{ module.label }}</p>
     </div>
-    <span class="badge {{ 'badge-ok' if total_weights == 100 else 'badge-muted' }}">
-        Weight total: {{ total_weights }}%
+    <span class="badge {{ 'badge-ok' if (total_weights|r2) == '100' else 'badge-muted' }}">
+        Weight total: {{ total_weights|r2 }}%
     </span>
 </div>
 
 {% if module.assessments %}
 <div class="panel">
     <h2>Plan</h2>
+    {# One form per row, hoisted out of the table: the inputs and buttons inside the
+       rows submit to it through the HTML5 form="" attribute, which keeps the table
+       markup valid. #}
+    {% for a in module.assessments %}
+    <form id="plan-form-{{ loop.index0 }}" method="post"
+          action="{{ url_for('modules.update_assessment', name=a.name) }}"></form>
+    <form id="plan-delete-{{ loop.index0 }}" method="post"
+          action="{{ url_for('modules.delete_assessment', name=a.name) }}"
+          onsubmit="return confirm('Remove this assessment type from the plan and delete all its marks?')"></form>
+    {% endfor %}
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Assessment</th>
+                    <th>Assessment type</th>
                     <th>Weight (%)</th>
+                    <th>Items (M)</th>
+                    <th>Count best (N)</th>
                     <th>Marked</th>
                     <th>Actions</th>
                 </tr>
@@ -48,27 +65,41 @@
             <tbody>
                 {% for a in module.assessments %}
                 <tr>
-                    <td>{{ a.name }}</td>
                     <td>
-                        <form method="post" action="{{ url_for('modules.update_assessment', name=a.name) }}"
-                              class="inline-form weight-form">
-                            <input type="number" name="weight" min="0" max="100" step="0.1"
-                                   value="{{ (a.weight * 100)|round(1) }}" required>
-                            <button type="submit" class="btn btn-secondary btn-sm">
-                                <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
-                                Save
-                            </button>
-                        </form>
+                        {{ a.name }}
+                        {% if a.items > 1 %}
+                            <span class="badge badge-muted"
+                                  title="Each counted item of {{ a.name }} is worth {{ (a.weight * 100 / a.count_best)|r2 }}% of the final mark">
+                                counts: best {{ a.count_best }} of {{ a.items }}
+                            </span>
+                        {% endif %}
                     </td>
-                    <td>{{ completed_counts[a.name] }}/{{ module.students|length }}</td>
                     <td>
-                        <form method="post" action="{{ url_for('modules.delete_assessment', name=a.name) }}"
-                              onsubmit="return confirm('Remove this assessment from the plan and delete all its marks?')">
-                            <button type="submit" class="btn-danger">
-                                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
-                                Remove
-                            </button>
-                        </form>
+                        <input form="plan-form-{{ loop.index0 }}" type="number" name="weight"
+                               min="0.1" max="100" step="0.1" value="{{ (a.weight * 100)|r2 }}"
+                               required aria-label="Weight for {{ a.name }} in percent">
+                    </td>
+                    <td>
+                        <input form="plan-form-{{ loop.index0 }}" type="number" name="items"
+                               min="1" step="1" value="{{ a.items }}" required
+                               aria-label="Number of items in {{ a.name }}">
+                    </td>
+                    <td>
+                        <input form="plan-form-{{ loop.index0 }}" type="number" name="count_best"
+                               min="1" step="1" value="{{ a.count_best }}" required
+                               aria-label="How many items of {{ a.name }} count">
+                    </td>
+                    <td>{{ marked_counts[a.name] }}/{{ module.students|length }}</td>
+                    <td class="row-actions">
+                        <button form="plan-form-{{ loop.index0 }}" type="submit"
+                                class="btn btn-secondary btn-sm">
+                            <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+                            Save
+                        </button>
+                        <button form="plan-delete-{{ loop.index0 }}" type="submit" class="btn-danger">
+                            <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                            Remove
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -76,35 +107,47 @@
         </table>
     </div>
     <p class="muted" style="margin-top:1rem">
-        Changing a weight recalculates every student's participation mark automatically.
-        Students' marks for removed assessments are deleted.
+        Changing a weight, the number of items or how many count recalculates every
+        student's participation mark automatically. The best N items of a type are kept
+        by percentage and the rest are shown as <em>dropped</em>; a blank mark is
+        “not written yet” and is never treated as a zero. Students' marks for removed
+        types are deleted.
     </p>
 </div>
 {% else %}
 <div class="panel">
     <h2>No assessments yet</h2>
-    <p>Add the first one below &mdash; for example "Class Test 1" with a weight of 15%.</p>
+    <p>Add the first one below &mdash; for example “Class Test” with 3 items, count best 2,
+    and a weight of 30%.</p>
 </div>
 {% endif %}
 
 <div class="panel">
-    <h2>Add assessment</h2>
+    <h2>Add assessment type</h2>
     <form method="post" action="{{ url_for('modules.add_assessment') }}" class="inline-form">
         <label for="assessment_name">Assessment name</label>
-        <input type="text" id="assessment_name" name="assessment_name" placeholder="e.g. Class Test 1" required>
+        <input type="text" id="assessment_name" name="assessment_name" placeholder="e.g. Class Test" required>
         <label for="weight">Weight (%)</label>
         <input type="number" id="weight" name="weight" min="0.1" max="100" step="0.1"
-               placeholder="e.g. 15" required>
+               placeholder="e.g. 30" required>
+        <label for="items">Number of items (M)</label>
+        <input type="number" id="items" name="items" min="1" step="1" value="1" required>
+        <label for="count_best">Count best (N)</label>
+        <input type="number" id="count_best" name="count_best" min="1" step="1"
+               placeholder="= number of items" aria-describedby="count_best_hint">
         <button type="submit" id="add-assessment-submit">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
             Add to plan
         </button>
     </form>
-    {% if module.assessments and total_weights != 100 %}
-        <p class="muted">Heads-up: weights currently sum to {{ total_weights }}%.
+    <p class="muted" id="count_best_hint">
+        “Count best” is how many of the items count towards the participation mark —
+        leave it equal to the number of items to drop nothing (e.g. 3 items, count best 2
+        = the best 2 of 3 tests count).
+    </p>
+    {% if module.assessments and (total_weights|r2) != '100' %}
+        <p class="muted">Heads-up: weights currently sum to {{ total_weights|r2 }}%.
         You can keep working with a partial plan, but the sum is usually 100%.</p>
     {% endif %}
 </div>
 {% endblock %}
-
-

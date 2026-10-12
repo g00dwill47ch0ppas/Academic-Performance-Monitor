@@ -8,11 +8,11 @@
     </div>
     <div class="help-step">
         <span class="help-step-num">2</span>
-        <span class="help-step-text">Type a mark (0&ndash;100) for each student, or leave it blank if they haven't written that assessment yet.</span>
+        <span class="help-step-text">Type a mark (0&ndash;100) for each student, or leave it blank if they haven't written that assessment yet. Blank is not zero &mdash; a recorded 0 counts as a real mark.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text">Click <strong>Save marks</strong> &mdash; each student's p-mark recalculates immediately.</span>
+        <span class="help-step-text">Click <strong>Save marks</strong> &mdash; each student's participation mark recalculates immediately. Marks shown as <strong>dropped</strong> are the weakest of a “best N of M” type and do not count.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
@@ -30,11 +30,11 @@
 <div class="panel">
     <h2>1. Choose the assessment</h2>
     <form method="get" class="inline-form" id="assessment-picker">
-        <label for="assessment">Assessment</label>
+        <label for="assessment">Assessment item</label>
         <select id="assessment" name="assessment" onchange="this.form.submit()">
-            {% for a in module.assessments %}
+            {% for a in items %}
                 <option value="{{ a.name }}" {{ 'selected' if a.name == selected else '' }}>
-                    {{ a.name }} ({{ (a.weight * 100)|round(1) }}%)
+                    {{ a.name }} ({{ (a.weight * 100)|r2 }}%{% if a.items > 1 %} &middot; best {{ a.count_best }} of {{ a.items }}{% endif %})
                 </option>
             {% endfor %}
         </select>
@@ -47,36 +47,71 @@
 
 {% if module.students %}
 <div class="panel">
+    {% set selected_item = items|selectattr('name', 'equalto', selected)|first %}
     <h2>2. Enter marks for “{{ selected }}”</h2>
     <p class="muted">Leave a student's mark blank if they haven't written this
-    assessment yet. Marks are out of 100.</p>
+    assessment yet &mdash; blank means “not written yet”, not zero. A recorded 0 is a
+    real mark. Marks are out of 100.</p>
+    {% if selected_item and selected_item.items > 1 %}
+    <p class="muted">
+        <strong>counts: best {{ selected_item.count_best }} of {{ selected_item.items }}</strong>
+        &mdash; only the best {{ selected_item.count_best }} marks of “
+        {{ selected_item.group or selected_item.name }}” count towards the participation
+        mark, so a strong mark here can push a weaker one out.
+    </p>
+    {% endif %}
 
     <form method="post" action="{{ url_for('students.bulk_marks') }}">
         <input type="hidden" name="assessment" value="{{ selected }}">
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr><th>Student</th><th>Mark</th><th>Previous</th></tr>
+                    <tr>
+                        <th>Student</th><th>Mark</th><th>Previous</th>
+                        <th>Participation so far</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for s in module.students %}
                     {% set entry = module.student_assessment(s, selected) %}
-                    <tr>
+                    {% set state = student_state[s.student_code] %}
+                    <tr class="{{ 'row-dropped' if selected in state.dropped else '' }}">
                         <td>{{ s.student_code }}</td>
                         <td>
                             <input type="number" name="mark_{{ s.student_code }}" min="0" max="100"
                                    step="0.1" placeholder="&mdash;"
+                                   aria-label="Mark for {{ s.student_code }}"
                                    value="{{ raws.get('mark_' ~ s.student_code, '') if raws is not none
                                             else (entry.mark if entry is not none and entry.mark is not none else '') }}">
                         </td>
                         <td>
                             {% if entry is not none and entry.completed %}
-                                <span class="badge badge-ok">
-                                    <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
-                                    {{ entry.mark }} &middot; completed
-                                </span>
+                                {% if selected in state.dropped %}
+                                    <span class="badge badge-dropped"
+                                          title="Dropped for this student: a stronger mark of this type is counted instead. This mark does not affect their participation mark.">
+                                        <svg class="icon" aria-hidden="true"><use href="#i-minus"></use></svg>
+                                        {{ entry.mark|r2 }} &middot; dropped
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-ok"
+                                          title="This mark counts towards the student's participation mark.">
+                                        <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                                        {{ entry.mark|r2 }} &middot; counted
+                                    </span>
+                                {% endif %}
                             {% else %}
                                 <span class="badge badge-muted">Not yet written</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ state.accrued|r2 }}
+                            {% if state.standing is not none %}
+                                <span class="muted">(standing {{ state.standing|r2 }}%)</span>
+                            {% endif %}
+                            {% if state.dropped %}
+                                <span class="muted" title="Marks currently dropped for this student: {{ state.dropped|join(', ') }}">
+                                    &middot; {{ state.dropped|length }} dropped
+                                </span>
                             {% endif %}
                         </td>
                     </tr>

@@ -5,11 +5,11 @@ student + mark import from a CSV."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from backend.algorithms.lp_bounds import compute_pmark_bounds
-from backend.algorithms.participation_plan import generate_participation_plan
+from backend.algorithms.participation_plan import build_projection, feasible_region
 from backend.data.store import data_store
 from backend.models.student import Module
 from backend.routes.modules_helpers import parse_mark_import_csv, parse_student_import_csv
+from backend.services.participation import analyse
 
 students_bp = Blueprint("students", __name__)
 
@@ -22,12 +22,13 @@ def active_module_or_redirect() -> tuple[Module | None, object | None]:
 
 
 def _parse_marks(module: Module, form) -> list[float | None]:
-    """Read mark_{i} fields aligned with the module plan. Blank = not completed.
+    """Read mark_{i} fields aligned with the module's plan ITEMS.
 
-    A mark must be a number in [0, 100] when provided.
+    Blank = not written yet (NOT zero). A mark must be a number in [0, 100] when
+    provided.
     """
     marks: list[float | None] = []
-    for i, plan in enumerate(module.assessments):
+    for i, plan in enumerate(module.plan_items()):
         raw = form.get(f"mark_{i}", "").strip()
         if raw == "":
             marks.append(None)
@@ -45,7 +46,7 @@ def _parse_marks(module: Module, form) -> list[float | None]:
 def _mark_raw_list(module: Module, form, student=None) -> list[str]:
     """Rebuild the form's mark inputs (for error re-render or prefill)."""
     raws: list[str] = []
-    for i in range(len(module.assessments)):
+    for i in range(len(module.plan_items())):
         if form is not None and f"mark_{i}" in form:
             raws.append(form.get(f"mark_{i}", ""))
         elif student is not None and i < len(student.assessments):
@@ -199,7 +200,8 @@ def student_csv_import():
     return render_template(
         "student_csv_import.html",
         module=module,
-        plan_count=len(module.assessments),
+        plan_items=module.plan_items(),
+        plan_count=len(module.plan_items()),
     )
 
 
@@ -249,7 +251,8 @@ def bulk_marks():
     if response is not None:
         return response
 
-    names = [a.name for a in module.assessments]
+    plan_items = module.plan_items()
+    names = [item.name for item in plan_items]
     if request.method == "POST":
         name = request.form.get("assessment", "")
         try:
@@ -274,7 +277,12 @@ def bulk_marks():
         except ValueError as e:
             flash(str(e), "error")
             return render_template(
-                "marks.html", module=module, selected=name, raws=request.form
+                "marks.html",
+                module=module,
+                items=plan_items,
+                selected=name,
+                raws=request.form,
+                student_state=_participation_by_student(module),
             )
         flash(f"Marks for '{name}' saved for {len(module.students)} students.", "success")
         return redirect(url_for("students.bulk_marks", assessment=name))
@@ -283,11 +291,43 @@ def bulk_marks():
     if selected not in names:
         selected = names[0] if names else ""
 
-    return render_template("marks.html", module=module, selected=selected, raws=None)
+    return render_template(
+        "marks.html",
+        module=module,
+        items=plan_items,
+        selected=selected,
+        raws=None,
+        student_state=_participation_by_student(module),
+    )
+
+
+def _participation_by_student(module: Module) -> dict[str, dict]:
+    """Per-student participation summary for the mark-entry grid.
+
+    Shows the lecturer which of a student's marks are counted, which are dropped
+    and what the mark currently stands at, all from the same rule engine.
+    """
+    state: dict[str, dict] = {}
+    for student in module.students:
+        participation = analyse(student.assessments)
+        state[student.student_code] = {
+            "accrued": participation.accrued,
+            "standing": participation.standing,
+            "counted": {r.name for r in participation.counted_items},
+            "dropped": {r.name for r in participation.dropped_items},
+        }
+    return state
 
 
 @students_bp.route("/student/<student_code>")
 def student_detail(student_code: str):
+    """One student: participation so far, the feasible region, and a target plan.
+
+    The lecturer picks an absolute target final participation mark, which must sit
+    inside the student's feasible region. The UI restricts the slider to that
+    region and this route re-validates whatever arrives, because the browser is
+    only a convenience — the server is the arbiter.
+    """
     module, response = active_module_or_redirect()
     if response is not None:
         return response
@@ -296,21 +336,45 @@ def student_detail(student_code: str):
     if student is None:
         abort(404)
 
-    min_pm, max_pm = compute_pmark_bounds(student.assessments)
+    threshold = module.config.pass_threshold
+    participation = analyse(student.assessments)
+    region = feasible_region(student.assessments, threshold)
 
-    target_pct = int(request.args.get("target_pct", 10))
-    scenarios = generate_participation_plan(
-        student.assessments, student.p_mark_current, target_pct
-    )
+    # Default target: the pass threshold when it sits inside the region (the
+    # usual goal), otherwise the middle of the region so the first render always
+    # shows a meaningful plan. The threshold stays marked on the bar either way.
+    if region.minimum <= threshold <= region.maximum:
+        target = threshold
+    else:
+        target = (region.minimum + region.maximum) / 2
+    target_error = None
+    raw_target = (request.args.get("target") or "").strip()
+    if raw_target:
+        try:
+            requested = float(raw_target)
+        except ValueError:
+            target_error = "Enter the target as a number, e.g. 62.5."
+        else:
+            if requested < region.minimum - 1e-9 or requested > region.maximum + 1e-9:
+                target_error = (
+                    f"Choose a target between {region.minimum:.2f}% and "
+                    f"{region.maximum:.2f}% — that is this student's feasible region."
+                )
+                target = min(max(requested, region.minimum), region.maximum)
+            else:
+                target = requested
+
+    projection = build_projection(student.assessments, target, threshold)
 
     return render_template(
         "student_detail.html",
         module=module,
         student=student,
-        min_pmark=min_pm,
-        max_pmark=max_pm,
-        target_pct=target_pct,
-        scenarios=scenarios,
-        target_pmark=round(student.p_mark_current * (1 + target_pct / 100), 1),
+        participation=participation,
+        region=region,
+        projection=projection,
+        target=target,
+        target_error=target_error,
+        threshold=threshold,
         all_codes=sorted(s.student_code for s in module.students),
     )

@@ -1,6 +1,29 @@
 {% extends "base.html" %}
 {% block title %}{{ student.student_code }}{% endblock %}
 
+{% block help %}
+    <div class="help-step">
+        <span class="help-step-num">1</span>
+        <span class="help-step-text"><strong>Earned so far</strong> is the participation mark from the marks that count, while the <strong>current standing</strong> re-bases it on the work counted so far (so one 80% test reads as 80%, not 8%).</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">2</span>
+        <span class="help-step-text">The <strong>feasible region</strong> is the lowest and highest final mark still reachable. Its lower end assumes every remaining item scores 0% (and is dropped where possible), its upper end assumes 100%.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">3</span>
+        <span class="help-step-text">Pick a <strong>target</strong> inside that region and the page works out the minimum percentage every remaining item needs. Nothing is treated as a zero: all remaining items are planned for.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">4</span>
+        <span class="help-step-text">Where a type drops its weakest items, the plan says how many of the remaining items can safely be <strong>skipped</strong>.</span>
+    </div>
+    <div class="help-step">
+        <span class="help-step-num">5</span>
+        <span class="help-step-text">Use <strong>Edit details</strong> to change the student's code or marks.</span>
+    </div>
+{% endblock %}
+
 {% block content %}
 <div class="page-header-row">
     <div class="page-head">
@@ -26,14 +49,144 @@
 <div class="card-row">
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-trending"></use></svg></span>
-        <span class="stat-label">Current participation mark</span>
-        <span class="stat-value">{{ student.p_mark_current }}</span>
+        <span class="stat-label">Participation earned so far</span>
+        <span class="stat-value">{{ participation.accrued|r2 }}</span>
+        <span class="muted">out of 100, counting only the marks that are kept</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+        <span class="stat-label">Current standing (counted work)</span>
+        <span class="stat-value">{{ participation.standing|r2 }}</span>
+        <span class="muted">the earned mark re-based on what has counted so far</span>
     </div>
     <div class="stat-card">
         <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-min-max"></use></svg></span>
-        <span class="stat-label">Min / max participation marks</span>
-        <span class="stat-value">{{ min_pmark }} / {{ max_pmark }}</span>
+        <span class="stat-label">Feasible region</span>
+        <span class="stat-value">{{ region.minimum|r2 }} – {{ region.maximum|r2 }}</span>
+        <span class="muted">lowest and highest final mark still reachable</span>
     </div>
+    <div class="stat-card">
+        <span class="stat-icon" aria-hidden="true"><svg class="icon"><use href="#i-layers"></use></svg></span>
+        <span class="stat-label">Counted slots still open</span>
+        <span class="stat-value">{{ participation.remaining_slots }}</span>
+        <span class="muted">{{ participation.dropped_items|length }} mark(s) currently dropped</span>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Feasible region of the final participation mark</h2>
+    {% if region.is_point %}
+        <p>Nothing remains to be written, so the final participation mark is fixed at
+        <strong>{{ region.maximum|r2 }}</strong>.</p>
+    {% else %}
+        <p class="muted">Every remaining item can score anywhere from 0% to 100%, so the final
+        participation mark can still land anywhere between the minimum and the maximum below.
+        The pass threshold and the mark earned so far are marked on the same scale.</p>
+    {% endif %}
+
+    <div class="region-bar" role="img"
+         aria-label="Feasible region {{ region.minimum|r2 }}% to {{ region.maximum|r2 }}%; earned so far {{ participation.accrued|r2 }}%; pass threshold {{ threshold|r2 }}%">
+        <span class="region-band"
+              style="left: {{ region.minimum|r2 }}%; width: {{ (region.maximum - region.minimum)|r2 if region.maximum > region.minimum else 0.5 }}%"></span>
+        <span class="region-marker region-marker-current" style="left: {{ participation.accrued|r2 }}%"
+              title="Earned so far: {{ participation.accrued|r2 }}%"></span>
+        <span class="region-marker region-marker-pass" style="left: {{ threshold|r2 }}%"
+              title="Pass threshold: {{ threshold|r2 }}%"></span>
+        <span class="region-marker region-marker-max" style="left: {{ region.maximum|r2 }}%"
+              title="Maximum: {{ region.maximum|r2 }}%"></span>
+    </div>
+    <p class="muted region-legend">
+        <span class="legend-dot legend-current"></span> earned so far {{ participation.accrued|r2 }}%
+        &middot; <span class="legend-dot legend-band"></span> reachable region
+        {{ region.minimum|r2 }}–{{ region.maximum|r2 }}%
+        &middot; <span class="legend-dot legend-pass"></span> pass threshold {{ threshold|r2 }}%
+    </p>
+
+    {% if not region.can_pass %}
+        <div class="status-banner status-infeasible" role="status">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+            <div>
+                <strong>Passing is no longer possible</strong>
+                <p>Even scoring 100% on every remaining item only reaches
+                {{ region.maximum|r2 }}%, below the {{ threshold|r2 }}% pass threshold.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h2>Plan for a target</h2>
+    <p class="muted">Pick the final participation mark you want this student to reach &mdash;
+    an absolute percentage inside the feasible region. Every remaining item is planned for;
+    nothing is treated as a zero.</p>
+
+    <form method="get" class="inline-form" id="target-form">
+        <label for="target">Target final participation mark (%)</label>
+        <input type="range" id="target" name="target" min="{{ region.minimum|r2 }}"
+               max="{{ region.maximum|r2 }}" step="0.5" value="{{ target|r2 }}"
+               aria-describedby="target_hint"
+               oninput="document.getElementById('target_value').value = this.value">
+        <input type="number" id="target_value" min="{{ region.minimum|r2 }}"
+               max="{{ region.maximum|r2 }}" step="0.01" value="{{ target|r2 }}"
+               aria-label="Target final participation mark in percent"
+               oninput="document.getElementById('target').value = this.value">
+        <span class="muted" id="target_hint">&nbsp;between {{ region.minimum|r2 }}% and {{ region.maximum|r2 }}%</span>
+        <button type="submit">
+            <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
+            Plan for this target
+        </button>
+    </form>
+
+    {% if target_error %}
+        <div class="flash flash-error" role="alert">{{ target_error }}</div>
+    {% endif %}
+    {% if region.is_point %}
+        <p class="muted">There is nothing left to write, so the only possible target is
+        {{ region.maximum|r2 }}%.</p>
+    {% endif %}
+
+    {% if not projection.reachable %}
+        <div class="status-banner status-infeasible" role="status">
+            <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+            <div>
+                <strong>Target out of reach</strong>
+                <p>{{ projection.summary }}</p>
+            </div>
+        </div>
+    {% else %}
+        <p class="plan-summary">{{ projection.summary }}</p>
+
+        {% if projection.notes %}
+        <ul class="plan-notes">
+            {% for note in projection.notes %}<li>{{ note }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if projection.items %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Remaining item</th>
+                        <th>Type</th>
+                        <th>Minimum required (%)</th>
+                        <th>Equivalent mark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in projection.items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.type_name }}</td>
+                        <td><strong>{{ item.percentage|r2 }}</strong></td>
+                        <td>{{ item.raw_mark|r2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    {% endif %}
 </div>
 
 <div class="panel">
@@ -42,26 +195,39 @@
         <table>
             <thead>
                 <tr>
-                    <th>Assessment</th>
+                    <th>Item</th>
+                    <th>Type</th>
                     <th>Weight</th>
                     <th>Mark</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for a in student.assessments %}
-                <tr>
+                {% for a in participation.records %}
+                <tr class="{{ 'row-dropped' if a.dropped else '' }}">
                     <td>{{ a.name }}</td>
-                    <td>{{ (a.weight * 100)|round(1) }}%</td>
-                    <td>{{ a.mark if a.completed else '—' }}</td>
                     <td>
-                        {% if a.completed %}
+                        {% if a.type_name and a.type_name != a.name %}{{ a.type_name }}{% else %}&mdash;{% endif %}
+                        {% if a.items > 1 %}
+                            <span class="muted">(best {{ a.count_best }} of {{ a.items }})</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ (a.weight * 100)|r2 }}%</td>
+                    <td>{{ a.mark|r2 if a.has_mark else '—' }}</td>
+                    <td>
+                        {% if a.dropped %}
+                            <span class="badge badge-dropped"
+                                  title="Not counted: only the best {{ a.count_best }} of {{ a.items }} items of {{ a.type_name }} count towards the participation mark.">
+                                <svg class="icon" aria-hidden="true"><use href="#i-minus"></use></svg>
+                                Dropped
+                            </span>
+                        {% elif a.counted %}
                             <span class="badge badge-ok">
                                 <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
-                                Completed
+                                Counted
                             </span>
                         {% else %}
-                            <span class="badge badge-muted">Remaining</span>
+                            <span class="badge badge-muted">Not yet written</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -69,67 +235,13 @@
             </tbody>
         </table>
     </div>
-</div>
-
-<div class="panel">
-    <h2>Participation Plan (Algorithm 2)</h2>
-    <form method="get" class="inline-form">
-        <label for="target_pct">Target improvement over current participation mark (%)</label>
-        <input type="range" id="target_pct" name="target_pct" min="0" max="50" step="5"
-               value="{{ target_pct }}" oninput="document.getElementById('target_pct_val').innerText = this.value">
-        <span id="target_pct_val">{{ target_pct }}</span>%
-        <button type="submit">
-            <svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg>
-            Generate plan
-        </button>
-    </form>
-
-    <p class="muted">Target participation mark: ~{{ target_pmark }}</p>
-
-    {% if scenarios|length == 0 %}
-        <p>No remaining assessments to plan for, or target is unreachable within the assumed mark scale.</p>
-    {% else %}
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        {% for a in student.assessments if not a.completed %}
-                            <th>{{ a.name }}</th>
-                        {% endfor %}
-                        <th>Resulting participation mark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for scenario in scenarios %}
-                    <tr>
-                        {% for a in student.assessments if not a.completed %}
-                            <td>{{ scenario[a.name] }}</td>
-                        {% endfor %}
-                        <td>{{ scenario.resulting_pmark }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    {% set dropped = participation.dropped_items %}
+    {% if dropped %}
+    <p class="muted" style="margin-top:1rem">
+        {{ dropped|length }} mark{{ 's are' if dropped|length != 1 else ' is' }} currently dropped
+        ({{ dropped|map(attribute='name')|join(', ') }}) &mdash; the weakest of a type stay out of the
+        participation mark and can be replaced by a stronger mark later.
+    </p>
     {% endif %}
 </div>
-
-{% block help %}
-    <div class="help-step">
-        <span class="help-step-num">1</span>
-        <span class="help-step-text"><strong>Min / Max</strong> show the best- and worst-case participation marks this student could still reach, based on their completed assessments and a 0&ndash;100 range for the ones not written yet.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">2</span>
-        <span class="help-step-text">Choose a <strong>target improvement</strong> (%) to see what mark combinations on the remaining assessments would get there.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">3</span>
-        <span class="help-step-text">Use <strong>Edit details</strong> to change the student's code or marks, or <strong>Remove</strong> to delete them.</span>
-    </div>
-    <div class="help-step">
-        <span class="help-step-num">4</span>
-        <span class="help-step-text">The list of other student codes is for reference &mdash; use it to check who else is in this module.</span>
-    </div>
-{% endblock %}
 {% endblock %}

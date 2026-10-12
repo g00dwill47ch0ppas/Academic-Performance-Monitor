@@ -33,7 +33,7 @@
     };
 
     /**
-     * The tour is split into parts so nobody has to sit through all 30 steps.
+     * The tour is split into parts so nobody has to sit through all 36 steps.
      * Each step declares a `section`; the parts below give it a title and a blurb,
      * and the step range of a part is derived from the steps themselves — so the
      * chooser can never drift away from the steps it describes.
@@ -205,10 +205,11 @@
             action: "type",
             section: "plan",
             fill: "Tutorial Test",
-            title: "Name an assessment",
+            title: "Name an assessment type",
             text:
-                "Type what the assessment is called, for example “Class Test 1” or " +
-                "“Practical 3”. Names must be unique inside the module.",
+                "Type what the assessment is called, for example “Class Tests” or " +
+                "“Practical”. A type can hold several items — the next steps set how many. " +
+                "Names must be unique inside the module.",
             hint: "Type a name — or use “Fill an example for me”."
         },
         {
@@ -219,10 +220,37 @@
             fill: "10",
             title: "Set its weight",
             text:
-                "The weight is the share of the final participation mark, in percent. The " +
-                "weights in a plan should add up to 100% — the badge at the top of this page " +
-                "keeps the running total.",
+                "The weight is the share of the final participation mark, in percent, for the " +
+                "whole type. The weights in a plan should add up to 100% — the badge at the top " +
+                "of this page keeps the running total.",
             hint: "Type a weight (for example 10) — or use “Fill an example for me”."
+        },
+        {
+            route: "/plan",
+            selector: "#items",
+            action: "type",
+            section: "plan",
+            fill: "3",
+            title: "How many items",
+            text:
+                "Number of items (M) is how many marks the type contains: 3 class tests, " +
+                "12 attendance sessions, and so on. Each item gets its own mark column for " +
+                "every student.",
+            hint: "Type the number of items (for example 3)."
+        },
+        {
+            route: "/plan",
+            selector: "#count_best",
+            action: "type",
+            section: "plan",
+            fill: "2",
+            title: "…and how many of them count",
+            text:
+                "Count best (N) is the “best N of M” setting: with 3 tests and count best 2, " +
+                "only the two best tests count and the weakest is dropped automatically. Each " +
+                "counted item is worth weight ÷ count-best, so nothing is lost when low marks " +
+                "fall away. Leave it equal to the number of items to drop nothing.",
+            hint: "Type how many count (for example 2 — the best 2 of 3 tests)."
         },
         {
             route: "/plan",
@@ -231,9 +259,10 @@
             section: "plan",
             title: "Add it to the plan",
             text:
-                "Clicking Add to plan commits the assessment and gives every existing student a " +
-                "blank “not yet written” entry for it. The tour leaves the sample plan as it is, " +
-                "so you can try the button yourself afterwards."
+                "Clicking Add to plan commits the type and gives every existing student a blank " +
+                "“not yet written” entry for each of its items. The page then labels the type " +
+                "“counts: best N of M” wherever it appears. The tour leaves the sample plan as " +
+                "it is, so you can try the button yourself afterwards."
         },
         {
             route: "/plan",
@@ -374,7 +403,62 @@
                 "explains the rule, and the sample module has more to look at."
         },
         {
-            route: "/at-risk",
+            route: "/students",
+            selector: "a[href='/student/STU001']",
+            action: "click",
+            section: "results",
+            title: "Open one student",
+            text:
+                "View opens a single student: every item and its weight, which marks count and " +
+                "which are dropped, and the participation mark they can still reach.",
+            missing:
+                "STU001 is not in this module, so there is no student to open. Switch to the " +
+                "sample module (CS101) to follow this part.",
+            hint: "Click View next to STU001."
+        },
+        {
+            route: "/student/STU001",
+            selector: ".region-bar",
+            action: "next",
+            section: "results",
+            title: "The feasible region",
+            text:
+                "This bar is the student's feasible region: the lowest and highest final " +
+                "participation mark they can still reach. The lower end assumes every remaining " +
+                "item scores 0% (and is dropped where the plan drops its weakest marks), the " +
+                "upper end assumes 100%. The dot marks what they have earned so far and the red " +
+                "line is the pass threshold, all on the same 0–100 scale.",
+            hint: "Click Next to continue."
+        },
+        {
+            route: "/student/STU001",
+            selector: "#target",
+            action: "select",
+            section: "results",
+            title: "Choose an actual target",
+            text:
+                "Pick the final participation mark you want this student to reach — an " +
+                "absolute percentage inside the region, not a percentage increase. The slider " +
+                "cannot leave the region, and the server rejects a target outside it.",
+            hint: "Move the slider to continue."
+        },
+        {
+            route: "/student/STU001",
+            selector: ".plan-summary",
+            action: "next",
+            section: "results",
+            title: "What each remaining item needs",
+            text:
+                "Every remaining item is planned for — none is treated as a zero. The table " +
+                "gives the minimum percentage each item needs for the target, and where the " +
+                "plan drops the weakest marks it says how many items can be skipped instead. " +
+                "If the whole region sits below the pass mark, the page says so plainly.",
+            missing:
+                "This student has nothing left to write, so the mark is already fixed and " +
+                "there is no plan to show."
+        },
+        {
+            route: "/student/STU001",
             selector: "#navSidebar a[href='/cohort']",
             action: "click",
             section: "results",

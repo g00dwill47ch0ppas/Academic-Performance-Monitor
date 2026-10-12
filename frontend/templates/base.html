@@ -222,6 +222,19 @@
                 <polyline points="7 3 7 8 15 8"/>
             </g>
         </symbol>
+        <symbol id="i-minus" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </g>
+        </symbol>
+        <symbol id="i-min-max" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 9 4 4 9 4"/>
+                <polyline points="15 20 20 20 20 15"/>
+                <line x1="4" y1="4" x2="11" y2="11"/>
+                <line x1="20" y1="20" x2="13" y2="13"/>
+            </g>
+        </symbol>
     </svg>
 
     <nav class="navbar" aria-label="Main">
@@ -429,6 +442,7 @@
         supervised by Prof. C. J. Kruger, NWU Potchefstroom Campus
     </footer>
 
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
     <script>

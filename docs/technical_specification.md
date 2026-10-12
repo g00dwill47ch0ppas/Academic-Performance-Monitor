@@ -57,22 +57,33 @@ Matched to the reference repo, with one addition flagged below.
 ```python
 @dataclass
 class Assessment:
-    name: str
-    weight: float          # w_i, in [0, 1]
-    mark: float | None     # y_i, None if not completed
+    name: str              # the ITEM's own name ("Class Test 2")
+    weight: float          # W of the whole TYPE it belongs to, in (0, 1]
+    mark: float | None     # y_i, None = not written yet (a recorded 0 IS a mark)
     completed: bool
+    group: str = ""        # the type this item belongs to (""; "" = its own type)
+    items: int = 1         # M — how many items the type has
+    count_best: int = 1    # N — how many of them count (1 <= N <= M)
+    item_max: float = 100.0  # max mark for this item; ranking uses mark / item_max
 
 @dataclass
 class Student:
     student_code: str               # anonymised code, never a real name/number
-    assessments: list[Assessment]
-    # p_mark_current computed as a property: sum(y_i * w_i) over completed assessments
+    assessments: list[Assessment]   # flat list of ITEMS across every type
+    # p_mark_current delegates to backend/services/participation.py
 
 @dataclass
 class ClassConfig:
     pass_threshold: float = 50.0
     target_class_average: float = 60.0
 ```
+
+A module's plan (`module.assessments`) holds one record per assessment **type**
+(name, W, M, N); each student holds one record per **item**. `Module.plan_item_specs()`
+flattens the types into items — `"<Type> 1" … "<Type> M"`, or the type's own name when
+M = 1 — and `Module.plan_items()` returns the same as blank `Assessment` records. Item
+metadata is copied onto every item record so the rule engine can work from a bare list
+(`M = N = 1` is exactly the pre-extension behaviour: p = Σ yᵢwᵢ).
 
 ## 4. State Management — In-Memory Store, No Database
 
@@ -97,10 +108,38 @@ store before any wider use.
   columns (FR2).
 - **`backend/data/store.py`** — in-memory `DataStore`; converts flat rows into
   `Student`/`Assessment` objects for the algorithm layer.
-- **`backend/algorithms/lp_bounds.py`** — Algorithm 1 (PuLP). Per-student min/max
-  p-mark.
-- **`backend/algorithms/participation_plan.py`** — Algorithm 2. Scenario enumeration
-  for a target % improvement.
+- **`backend/services/participation.py`** — **the single source of truth for the
+  participation mark and the best-N-of-M rule.** Routes, algorithms, the at-risk
+  logic, exports and templates all call it; no other module re-implements the drop
+  rule. Public surface:
+  - `analyse(items) -> Participation` — groups items by type and returns, per type,
+    the counted / dropped / remaining items, accrued marks, current standing, the
+    remaining counted slots and the min/max achievable contribution;
+  - `final_participation(items)` / `current_standing(items)` / `min_max_final(items)` —
+    the three numbers the app displays;
+  - `final_with_marks(items, overrides)` — re-runs the best-N rule with specific items
+    re-marked, which is how the projection answers “what if every remaining item scores
+    x%?” without duplicating the rule.
+
+  Full precision throughout: this module never rounds.
+- **`backend/services/rounding.py`** — display rounding, the only place a number is
+  rounded for the user. `fmt2(value)` rounds to at most two decimals (half-up, via
+  `Decimal`, so 0.005 → 0.01 and 2.675 → 2.68 rather than Python's banker's rounding),
+  trims trailing zeros (70, 70.5, 70.25), never shows `-0.00`, and returns an em dash
+  for `None`/NaN/infinity. It is registered as the Jinja filter `|r2` in
+  `create_app()` and mirrored in the browser by `fmt2()` in
+  `frontend/static/js/format.js` (loaded from `base.html`), so a live JS summary and a
+  server-rendered page cannot disagree. Exports call `fmt2` too, and templates use
+  `|r2` instead of `round(...)`, `|format(...)` or `toFixed(...)` — there are no
+  other rounding calls left in the templates or the JS.
+- **`backend/algorithms/lp_bounds.py`** — Algorithm 1. Per-student min/max bounds,
+  now delegated to the participation service (see the deviation list in §7):
+  min = accrued mark, max = top-N of (completed marks + 100% for everything
+  outstanding). `is_at_risk(max, threshold)` is unchanged.
+- **`backend/algorithms/participation_plan.py`** — Algorithm 2, rebuilt around the
+  feasible region and an absolute target (`feasible_region`, `build_projection`,
+  `required_uniform_percentage`). The old scenario enumeration is gone; §5.2 records
+  why it could not be carried over.
 - **`backend/algorithms/nlp_weights.py`** — Algorithm 3 (scipy). Cohort weight
   optimisation for a target class average, constrained by the lecturer's
   per-assessment weight ranges. Public surface:
@@ -175,11 +214,80 @@ the navigation panel. Each step also names the `section` it belongs to.
   CS101 dataset stays intact. The data note (memory-only, resets on restart, never enter
   real student data) is shown on every step.
 
+### 5.2 The participation rule, droppable assessments and the feasible region
+
+**The rule (one implementation: `backend/services/participation.py`).** An assessment
+type holds M items of which the best N count. With type weight W, every counted slot is
+worth `W / N` of the final mark, and the counted slots are the top `min(k, N)` completed
+items **by percentage** (`mark / item_max`), so items with different maxima compare
+fairly; ties go to the earliest item in plan order. Consequences the app depends on:
+
+| Case | Result |
+|---|---|
+| blank mark | “not written yet” — it is *not* zero and never fills a slot |
+| recorded 0 | a real mark: it fills a slot and drags the standing down |
+| k <= N | every completed item counts; nothing is dropped yet |
+| k > N | the lowest ranked completed items are **dropped** (badge + strikethrough) |
+| accrued | `Σ(carried percentages) × W / N` — the participation mark earned so far |
+| standing | accrued re-based on the counted slots filled so far (a mean percentage) |
+| min final | the accrued mark — remaining items can score 0 and are then dropped |
+| max final | top-N of (completed marks + 100% for every remaining item): a strong remaining item *displaces* a dropped one |
+
+`W`, `M`, `N` are validated at three layers: the plan form (`min="1"`, and the store’s
+`validate_type` rejects `N > M`, `N < 1` or `M < 1`), the route (whole numbers, 1 ≤ N ≤ M,
+1 ≤ M) and the store itself, which is the arbiter for every path including CSV import.
+Changing M, N or W re-derives every student’s item list from the plan while matching
+existing marks **by item name**, so a recorded mark is never lost by an edit.
+
+**The feasible region.** `[min_final, max_final]` per student, shown as a bar on the
+student page with the accrued mark and the pass threshold marked on the same 0–100 axis.
+When the whole region lies below the threshold the page says passing is no longer
+possible. The cohort-level view of the same quantity is the per-student min/max columns
+on the dashboard, students and at-risk tables.
+
+**The target projection.** The lecturer picks an absolute target inside the region (a
+slider plus a number input, both bounded by the region) and the page solves the minimum
+uniform percentage `x` that every remaining item must reach:
+
+- `final(x)` is monotone non-decreasing, so `x` is solved by bisection (200 halvings,
+tolerance 1e-6 marks) with the best-N rule applied inside **every** evaluation — never
+approximated. Target at the region minimum gives x = 0; at the maximum it gives x = 100.
+- **All** remaining items appear in the plan table; nothing is set to zero as a shortcut.
+- Skipping is handled honestly: for each type the code re-solves the level the *other*
+items need once t of them are left unwritten, and reports the largest t that still
+reaches the target (“you can skip 1 item if the other 1 scores at least 80%”).
+- Edge cases: nothing left to write collapses the region to a point and the page says the
+mark is fixed; a target equal to the accrued mark needs nothing further; a target outside
+the region is blocked by the slider **and** rejected by the route with a message that
+names the region.
+
+**Why the old Algorithm 2 was replaced (no dead code left).** The published algorithm
+enumerates mark combinations for a percentage *improvement* over the current p-mark and
+treats not-yet-written assessments as zero. Two things made that unusable here: the
+inputs changed (an absolute target, and every remaining item as a variable), and with
+drops a “scenario” is no longer a plain mark vector — *which marks are dropped* is part
+of the outcome, so the enumeration would have had to rank inside each combination. The
+`generate_participation_plan` enumeration and its test file were therefore removed rather
+than left as an unused second implementation of the same idea.
+
+### 5.3 Demo data
+
+`backend/data/sample_data.csv` is simulated data (`# deterministic, seed 2018`) built to
+exercise every new rule: **Class Test** — 3 items, best 2 count, 30%; **Assignment** —
+2 items, both count, 20%; **Practical** — 1 item, 15%; **Attendance** — 12 sessions, best
+10 count, 35%. Its 15 students sit at different completion stages, including one with
+nothing recorded, one who has written everything, one with a recorded 0 at an attendance
+session (a real mark, not a blank), and one with two low attendance marks that are
+dropped. Columns: `student_code, assessment_name, weight, mark, completed, group,
+items, count_best, item_max`; the first five are the original format, so older files
+still import with every assessment as its own M = N = 1 type.
+
 ## 6. Non-Functional Implementation Notes
 
 - **Performance (NFR1):** algorithms run on-demand per request (not eagerly cached),
-  which is fine at the class sizes this prototype targets (~15–200 students); PuLP's
-  CBC solve and scipy's SLSQP both return well under a second for these sizes.
+  which is fine at the class sizes this prototype targets (~15–200 students); scipy's
+  SLSQP solve returns well under a second, the participation rule is a sort per type,
+  and the projection bisection is ~200 cheap evaluations.
 - **Privacy (NFR3):** `loader.py`'s column-name denylist (`student_name`, `surname`,
   `id_number`, `email`, etc.) raises `PIIValidationError` rather than silently
   accepting a column that could contain identifiable data. Deliberately specific
@@ -216,3 +324,23 @@ the navigation panel. Each step also names the `section` it belongs to.
 5. Algorithm 3 (scipy NLP weights) + cohort planning route/template
 6. Polish pass: at-risk styling, threshold/target controls, upload flow
 7. Dry-run with fabricated data before the real lecturer session
+
+## 9. Deviations from Van der Merwe et al. (2018b)
+
+Every place the implemented model goes beyond, or reads differently from, the published
+one is marked in the source with `# TODO: confirm against source paper`. Collected here:
+
+| # | Location | Deviation | Why |
+|---|---|---|---|
+| 1 | `algorithms/lp_bounds.py` | Bounds are computed in closed form instead of by two LP solves | Once a type drops its weakest items, which items contribute is decided by a ranking, so the objective is piecewise-linear and no LP can express it. The closed form returns exactly the LP's answer when N = M (nothing dropped) — see README, “A note on the tech stack”. |
+| 2 | `algorithms/lp_bounds.py` | The `[0, 100]` assumption per remaining mark is kept; no cross-assessment constraint | Carried over from the original implementation; still unconfirmed. |
+| 3 | `services/participation.py` | The drop rule itself (best N of M, ranked by percentage, ties by plan order) | Not in the paper — this project's extension. The ranking key (`mark / item_max`) and the tie rule were chosen here. |
+| 4 | `algorithms/participation_plan.py` | Algorithm 2 plans from an absolute target inside a feasible region instead of a percentage improvement, and includes every remaining item | Requested behaviour; the published enumeration could not be reconciled with drops (see §5.2). |
+| 5 | `algorithms/participation_plan.py` | The optional-item (“skip”) analysis | New; the paper defines no such analysis. |
+| 6 | `routes/cohort.py::_mark_matrix` | A type's entry in the class-average matrix is its counted standing, and an assessment nobody has written yet still contributes 0 | The objective is unchanged; only the mark data feeding it is chosen. The paper does not describe droppable types or unwritten assessments, so the choice is flagged, not silently made. |
+| 7 | `algorithms/nlp_weights.py` | Solver tolerances, the 1% floor and the “on target” tolerance are implementation choices | Pre-existing; ranges themselves come from the lecturer's input (flagged in the module docstring). |
+
+Nothing in the three published objectives was changed: Algorithm 1's min/max, Algorithm 3's
+`minimise (class average − target)²` and Algorithm 2's “minimum marks needed” intent are all
+intact — the deviations above concern the *feasible set* the drop rule introduces, the half
+of Algorithm 2 that no longer had a defined input, and the choice of mark data.

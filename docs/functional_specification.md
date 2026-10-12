@@ -33,22 +33,51 @@ authentication/authorisation beyond a single-session demo.
   use a bundled simulated dataset by default.
 - **FR2** — The system shall validate on load: reject any column resembling a real
   name, ID number, or email (ethics requirement — proposal §1.5.2).
-- **FR3** — The system shall compute the current participation mark for every student:
-  `p = y1w1 + y2w2 + ... + ynwn`.
+- **FR3** — The system shall compute the participation mark earned so far for every
+  student as `p = Σ yᵢwᵢ` over the marks that count, where an assessment type's weight
+  applies to the best N of its M items (FR21). It shall additionally show a **current
+  standing** — the earned mark re-based on the work that has counted so far — and shall
+  label the two distinctly so neither is mistaken for the other.
+- **FR3.1** — A mark field left blank shall mean “not written yet” and shall never be
+  treated as a zero: it fills no counted slot and lowers nothing. A recorded `0` shall be
+  a real mark that counts. The data model, the entry forms, the CSV/XLSX importer and the
+  bundled dataset shall all keep the two states distinct.
 
-### 3.2 Algorithm 1 — Performance Bounds (LP)
+### 3.2 Algorithm 1 — Performance Bounds
 - **FR4** — The system shall compute, per student, the minimum and maximum achievable
-  p-mark given current marks and the weights of remaining (not-yet-written) assessments,
-  using linear programming.
+  participation mark given the marks that count and the items still outstanding, with the
+  best-N-of-M rule (FR21) applied at both ends: the minimum assumes every remaining item
+  scores 0% (and is dropped where the rule allows), the maximum assumes 100%, where a
+  strong remaining item may displace a dropped one. These two values are the student's
+  **feasible region** (FR22).
 - **FR5** — The system shall flag a student "at-risk" when their maximum achievable
   p-mark falls below a lecturer-configurable pass threshold.
 
 ### 3.3 Algorithm 2 — Participation Planning
-- **FR6** — For a lecturer-selected target percentage improvement, the system shall
-  enumerate feasible score combinations across remaining assessments and present the
-  marks required in each scenario to reach that target.
-- **FR7** — The system shall present participation-plan output per student in a
-  human-readable table (assessment → required mark).
+- **FR6** — The system shall show a student's **feasible region** — the lowest and highest
+  final participation mark still reachable — before any planning happens, as a labelled
+  range with the mark earned so far and the pass threshold marked on the same 0–100 axis.
+  Where the whole region lies below the pass mark, the system shall state plainly that
+  passing is no longer possible.
+- **FR6.1** — The lecturer shall then choose the desired **actual target** final
+  participation mark (an absolute percentage, not an increase), constrained to the feasible
+  region. The control shall be a slider plus a number input bounded by the region; a target
+  outside the region shall be refused in the browser **and** rejected by the server with a
+  message naming the region.
+- **FR6.2** — The plan shall include **all** remaining items of every type as variables —
+  never setting an undone item to zero as a shortcut — and shall compute the minimum
+  uniform percentage `x` that every remaining item must reach for the final participation
+  mark to meet the target, applying the best-N-of-M rule inside that calculation.
+- **FR6.3** — The system shall report where dropping makes items optional: how many of a
+  type's remaining items may be left unassessed, and the level the other items must then
+  reach (which is higher than the uniform x, because a skipped item cannot contribute).
+- **FR7** — The system shall present the plan per student in a human-readable table
+  (remaining item → type → minimum required percentage → equivalent raw mark), with a
+  one-line plain-English summary of the target and the required level.
+- **FR7.1** — The system shall handle these cases with a friendly message rather than an
+  empty or broken page: no remaining items (the region is a single point), a target equal
+  to the mark already earned, a target above the maximum, and a student with nothing
+  recorded.
 
 ### 3.4 Algorithm 3 — Cohort Weight Optimisation (NLP)
 - **FR8** — For a lecturer-specified target class average, the system shall compute the
@@ -71,11 +100,38 @@ authentication/authorisation beyond a single-session demo.
   the solver status (optimal / infeasible / did not converge) together with how close the
   resulting class average is to the target.
 
+### 3.4.1 Participation Rule Additions
+- **FR21 (droppable assessments, “best N of M”)** — The system shall let the lecturer set,
+  per assessment type in the plan, the number of items M and how many count N, with
+  `1 <= N <= M` validated in the page, at the route and in the store. Items shall be ranked
+  by **percentage** (`mark / item max`), not raw marks, so items with different maxima
+  compare fairly, and ties shall break deterministically (earliest item first). A student's
+  counted items shall be the top `min(k, N)` completed items: while `k <= N` every completed
+  item counts and nothing is dropped; once `k > N` the lowest are dropped. Each counted slot
+  shall be worth `weight ÷ N` of the final mark, and unfilled slots contribute nothing. The
+  page shall label every affected row “counts: best N of M”, and shall show dropped marks
+  visibly — greyed, struck through and badged with a tooltip — in mark entry and on the
+  student detail page. This rule shall exist in exactly one implementation, called by every
+  other part of the system.
+- **FR22 (feasible region and target)** — As FR4, FR6 and FR6.1–FR6.3: the region shall be
+  computed and shown first, the target chosen as an absolute value inside it, and the
+  projection derived from that target.
+- **FR23 (display rounding)** — Every number the system *displays* — tables, cards, KPIs,
+  chart labels and tooltips, slider and input values, error and flash messages, and
+  exported CSV files — shall be rounded to at most two decimal places through one shared
+  helper (`|r2` in templates, `fmt2()` in the browser). Whole numbers shall appear without
+  needless `.00`, there shall be no `-0.00`, and a missing value shall show as “—”.
+  Calculations and stored values shall keep full precision; only the output edge rounds.
+
 ### 3.5 Dashboard & Interaction
-- **FR10** — The system shall present a class-wide dashboard: cohort average, at-risk
-  count, and full cohort table.
-- **FR11** — The system shall present a per-student detail view combining current p-mark,
-  bounds (Algorithm 1), and participation plan (Algorithm 2).
+- **FR10** — The system shall present a class-wide dashboard: cohort average (participation
+  earned so far), at-risk count, class size, the number of marks currently dropped, and
+  full cohort and at-risk tables showing each student's earned mark, standing, feasible
+  region and dropped count.
+- **FR11** — The system shall present a per-student detail view combining the mark earned
+  so far, the current standing, the bounds (Algorithm 1 / FR4), the feasible region and the
+  target-driven participation plan (Algorithm 2), with each assessment item labelled by its
+  type, its weight and whether its mark is counted, dropped or not yet written.
 - **FR12** — The system shall let the lecturer adjust the pass threshold and target class
   average via a form control, recomputing and re-rendering results on submit. The pass
   threshold can also be set when a module is created.
@@ -101,10 +157,11 @@ authentication/authorisation beyond a single-session demo.
 - **FR19** — The system shall provide a **guided tour** that walks the lecturer through the
   whole workflow on the live pages, in this order: open the navigation panel (pages +
   module switcher), create a module (code, name, pass threshold), define the assessment
-  plan (assessments, weights, running total), add students and enter marks (every field
-  explained), read the dashboard and at-risk indicators, plan the cohort's weight ranges
-  (including the rule that a weight can never be zero), and finish with a recap. The tour
-  shall:
+  plan (assessment types, weights, running total, number of items M and count best N),
+  add students and enter marks (every field explained), read the dashboard and at-risk
+  indicators, open one student's feasible region and pick a target inside it, plan the
+  cohort's weight ranges (including the rule that a weight can never be zero), and finish
+  with a recap. The tour shall:
   1. dim the page and highlight only the current target, leaving that element interactive;
   2. advance when the lecturer performs the action (click, value entered, selection made),
      not only on a Next button, and offer a “Fill an example for me” helper for typing

@@ -12,7 +12,7 @@
     </div>
     <div class="help-step">
         <span class="help-step-num">3</span>
-        <span class="help-step-text"><strong>Summary</strong> downloads one row per student with current participation mark, min/max bounds and at-risk flag.</span>
+        <span class="help-step-text"><strong>Summary</strong> downloads one row per student with the participation mark so far, the current standing, the min/max bounds of the feasible region and the at-risk flag.</span>
     </div>
     <div class="help-step">
         <span class="help-step-num">4</span>
@@ -33,7 +33,7 @@
     <form method="post" action="{{ url_for('home.update_threshold') }}" class="inline-form">
         <label for="threshold">Pass threshold (%)</label>
         <input type="number" id="threshold" name="threshold" min="0" max="100" step="1"
-               value="{{ threshold }}">
+               value="{{ threshold|r2 }}">
         <button type="submit">
             <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
             Update threshold
@@ -44,10 +44,12 @@
 <div class="panel">
     <h2>Export module data</h2>
     <p class="muted">
-        Currently {{ student_count }} student{{ 's' if student_count != 1 else '' }} and
-        {{ assessment_count }} assessment{{ 's' if assessment_count != 1 else '' }}.
-        The data file uses the same format the importer expects, so exports can be edited
-        and re-imported.
+        Currently {{ student_count }} student{{ 's' if student_count != 1 else '' }},
+        {{ assessment_count }} assessment type{{ 's' if assessment_count != 1 else '' }}
+        ({{ item_count }} item{{ 's' if item_count != 1 else '' }}).
+        The data file uses the same format the importer expects &mdash; including the
+        <code>group</code>, <code>items</code> and <code>count_best</code> columns that describe
+        droppable types &mdash; so exports can be edited and re-imported.
     </p>
     <div class="row-actions">
         <a class="btn" href="{{ url_for('modules.export_module', code=module.code) }}">
@@ -65,8 +67,10 @@
     <h2>Replace module data from a file</h2>
     <p class="muted">
         Expected columns: <code>student_code, assessment_name, weight, mark, completed</code>.
-        Weights are decimal fractions (e.g. 0.2 = 20%). The module code, name and thresholds
-        are kept.
+        Optional columns <code>group, items, count_best</code> add droppable assessment types
+        (M items of which the best N count) and <code>item_max</code> sets an item's maximum
+        mark. Weights are decimal fractions (e.g. 0.2 = 20%). The module code, name and
+        thresholds are kept.
     </p>
     <form method="post" action="{{ url_for('home.upload') }}" enctype="multipart/form-data"
           class="inline-form"

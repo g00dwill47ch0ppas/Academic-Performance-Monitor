@@ -1606,3 +1606,121 @@ html.dark-mode .weight-chart-band {
         order: 3;
     }
 }
+
+/* ===========================
+   Participation: feasible region + dropped marks
+   =========================== */
+
+/* Horizontal bar (0-100% scale) showing the reachable region, the mark earned
+   so far and the pass threshold on the same axis. */
+
+.region-bar {
+    position: relative;
+    height: 22px;
+    margin: 1.25rem 0 0.5rem;
+    border-radius: 11px;
+    background: var(--tint);
+    border: 1px solid var(--border);
+}
+
+.region-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 10px;
+    background: rgba(78, 42, 132, 0.3);
+}
+
+html.dark-mode .region-band {
+    background: rgba(245, 179, 1, 0.25);
+}
+
+.region-marker {
+    position: absolute;
+    top: 50%;
+    width: 4px;
+    height: 22px;
+    margin-left: -2px;
+    border-radius: 2px;
+    transform: translateY(-50%);
+    background: var(--text-muted);
+}
+
+.region-marker-current {
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--card);
+}
+
+.region-marker-pass {
+    background: var(--danger, #c0392b);
+    width: 2px;
+}
+
+.region-marker-max {
+    background: var(--primary);
+}
+
+.region-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.25rem;
+    vertical-align: middle;
+}
+
+.legend-current { background: var(--accent); }
+.legend-band { background: rgba(78, 42, 132, 0.3); }
+.legend-pass { background: var(--danger, #c0392b); }
+
+html.dark-mode .legend-band { background: rgba(245, 179, 1, 0.25); }
+
+/* Dropped marks stay visible but clearly out of the calculation. */
+
+.badge-dropped {
+    background: var(--tint);
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.badge-dropped .icon {
+    text-decoration: none;
+}
+
+tr.row-dropped > td:first-child,
+tr.row-dropped .dropped-mark {
+    opacity: 0.65;
+    text-decoration: line-through;
+}
+
+tr.row-dropped td {
+    color: var(--text-muted);
+}
+
+.plan-summary {
+    font-weight: 600;
+    margin: 0.75rem 0 0.25rem;
+}
+
+.plan-notes {
+    margin: 0.25rem 0 1rem;
+    padding-left: 1.1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.plan-notes li + li {
+    margin-top: 0.25rem;
+}

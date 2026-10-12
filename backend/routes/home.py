@@ -1,9 +1,10 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
-from backend.algorithms.lp_bounds import compute_pmark_bounds, is_at_risk
+from backend.algorithms.lp_bounds import is_at_risk
 from backend.data.loader import PIIValidationError
 from backend.data.store import data_store
 from backend.models.student import Module
+from backend.services.participation import analyse
 
 home_bp = Blueprint("home", __name__)
 
@@ -16,18 +17,25 @@ def active_module_or_redirect() -> tuple[Module | None, object | None]:
 
 
 def module_rows(module: Module) -> list[dict]:
-    """One summary row per student: p-mark bounds and at-risk flag (best case)."""
+    """One summary row per student: participation, region bounds and risk flag.
+
+    Every figure comes from the participation rule engine, so the drop rule is
+    applied identically here and on the student detail page.
+    """
     threshold = module.config.pass_threshold
     rows = []
     for student in module.students:
-        min_pm, max_pm = compute_pmark_bounds(student.assessments)
+        participation = analyse(student.assessments)
         rows.append(
             {
                 "student_code": student.student_code,
-                "current_pmark": round(student.p_mark_current, 1),
-                "min_pmark": min_pm,
-                "max_pmark": max_pm,
-                "at_risk": is_at_risk(max_pm, threshold),
+                "accrued": participation.accrued,
+                "standing": participation.standing,
+                "min_pmark": participation.min_final,
+                "max_pmark": participation.max_final,
+                "dropped_count": len(participation.dropped_items),
+                "remaining_slots": participation.remaining_slots,
+                "at_risk": is_at_risk(participation.max_final, threshold),
             }
         )
     return rows
@@ -41,8 +49,9 @@ def home():
         return response
 
     rows = module_rows(module)
-    class_average = round(sum(r["current_pmark"] for r in rows) / len(rows), 1) if rows else 0
+    class_average = sum(r["accrued"] for r in rows) / len(rows) if rows else 0.0
     at_risk_count = sum(1 for r in rows if r["at_risk"])
+    dropped_count = sum(r["dropped_count"] for r in rows)
 
     return render_template(
         "overview.html",
@@ -50,6 +59,7 @@ def home():
         class_average=class_average,
         at_risk_count=at_risk_count,
         class_size=len(rows),
+        dropped_count=dropped_count,
     )
 
 
@@ -93,6 +103,7 @@ def settings():
         threshold=module.config.pass_threshold,
         student_count=len(module.students),
         assessment_count=len(module.assessments),
+        item_count=len(module.plan_items()),
     )
 
 

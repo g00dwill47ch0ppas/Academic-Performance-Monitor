@@ -23,14 +23,14 @@ from backend.algorithms.nlp_weights import (
     validate_weight_ranges,
 )
 
-# The bundled CS101 sample plan: 15% + 15% + 20% + 20% + 15% + 15% = 100%.
+# The bundled CS101 sample plan (four types, 100% total; two of them drop marks):
+# Class Test 30% (best 2 of 3), Assignment 20% (2 of 2), Practical 15%, Attendance
+# 35% (best 10 of 12).
 DEFAULT_RANGES = {
-    "Class Test 1": (10.0, 25.0),
-    "Class Test 2": (10.0, 25.0),
-    "Assignment 1": (10.0, 30.0),
-    "Assignment 2": (10.0, 30.0),
-    "Practical": (5.0, 20.0),
-    "Attendance": (5.0, 20.0),
+    "Class Test": (20.0, 40.0),
+    "Assignment": (10.0, 30.0),
+    "Practical": (5.0, 25.0),
+    "Attendance": (25.0, 45.0),
 }
 
 
@@ -164,15 +164,27 @@ def test_reachable_target_is_reported_as_reached():
     wide = {name: (5.0, 60.0) for name in DEFAULT_RANGES}
 
     body = _client().post(
-        "/cohort", data=_form(target="45", ranges=wide)
+        "/cohort", data=_form(target="50", ranges=wide)
     ).data.decode("utf-8")
 
     assert "Target reached" in body
 
 
+def test_target_below_the_reachable_floor_is_reported_as_unreachable():
+    """A type's contribution is now its counted standing, so the floor moved up."""
+    wide = {name: (5.0, 60.0) for name in DEFAULT_RANGES}
+
+    body = _client().post(
+        "/cohort", data=_form(target="30", ranges=wide)
+    ).data.decode("utf-8")
+
+    assert "Target reached" not in body
+    assert "closest class" in body
+
+
 def test_zero_minimum_is_rejected_on_the_page():
     ranges = dict(DEFAULT_RANGES)
-    ranges["Class Test 1"] = (0.0, 25.0)
+    ranges["Class Test"] = (0.0, 25.0)
 
     body = _client().post("/cohort", data=_form(ranges=ranges)).data.decode("utf-8")
 
@@ -192,7 +204,7 @@ def test_negative_minimum_is_rejected_on_the_page():
 
 def test_minimum_above_maximum_is_rejected_on_the_page():
     ranges = dict(DEFAULT_RANGES)
-    ranges["Assignment 1"] = (40.0, 20.0)
+    ranges["Assignment"] = (40.0, 20.0)
 
     body = _client().post("/cohort", data=_form(ranges=ranges)).data.decode("utf-8")
 
@@ -201,29 +213,29 @@ def test_minimum_above_maximum_is_rejected_on_the_page():
 
 
 def test_minimums_adding_up_to_more_than_100_is_rejected_on_the_page():
-    ranges = {name: (30.0, 60.0) for name in DEFAULT_RANGES}  # 180% of minimums
+    ranges = {name: (30.0, 60.0) for name in DEFAULT_RANGES}  # 120% of minimums
 
     body = _client().post("/cohort", data=_form(ranges=ranges)).data.decode("utf-8")
 
     assert "more than 100%" in body
-    assert "80.0%" in body  # 180 - 100, stated explicitly
+    assert "20.0%" in body  # 120 - 100, stated explicitly
     assert "Proposed weight (%)" not in body
 
 
 def test_maximums_adding_up_to_less_than_100_is_rejected_on_the_page():
-    ranges = {name: (1.0, 5.0) for name in DEFAULT_RANGES}  # only 30% of maximums
+    ranges = {name: (1.0, 5.0) for name in DEFAULT_RANGES}  # only 20% of maximums
 
     body = _client().post("/cohort", data=_form(ranges=ranges)).data.decode("utf-8")
 
     assert "less than 100%" in body
-    assert "70.0%" in body  # 100 - 30, stated explicitly
+    assert "80.0%" in body  # 100 - 20, stated explicitly
     assert "Proposed weight (%)" not in body
 
 
 def test_non_numeric_range_reports_a_friendly_error():
     body = _client().post(
         "/cohort",
-        data=_form(**{"min_Class Test 1": "abc"}),
+        data=_form(**{"min_Class Test": "abc"}),
     ).data.decode("utf-8")
 
     assert "must be a number" in body

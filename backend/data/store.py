@@ -111,12 +111,82 @@ class DataStore:
         return True
 
     # ------------------------------------------------------------------ #
-    # Assessment plan
+    # Assessment plan (types of M items, best N of which count)
     # ------------------------------------------------------------------ #
-    def add_assessment(self, module: Module, name: str, weight: float) -> None:
-        """Add an assessment to the plan; every student starts it as 'remaining'.
+    @staticmethod
+    def validate_type(items: int, count_best: int) -> tuple[int, int]:
+        """Check the droppable-assessment pair: 1 <= N <= M. Returns (M, N)."""
+        try:
+            items = int(items)
+            count_best = int(count_best)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "Number of items and count-best must be whole numbers."
+            ) from None
+        if items < 1:
+            raise ValueError("An assessment type needs at least 1 item.")
+        if count_best < 1:
+            raise ValueError("At least 1 item must count towards the participation mark.")
+        if count_best > items:
+            raise ValueError(
+                f"Count-best ({count_best}) cannot be more than the number of "
+                f"items ({items}) — only {items} can ever be written."
+            )
+        return items, count_best
 
-        Raises ValueError on empty/duplicate names or weights outside (0, 1].
+    @staticmethod
+    def _apply_item_specs(students: list[Student], specs: list[dict]) -> None:
+        """Rebuild every student's item list from the plan, keeping known marks.
+
+        Marks are matched by item name, so editing a type's item count, weight or
+        count-best never loses a recorded mark.
+        """
+        for student in students:
+            by_name = {a.name: a for a in student.assessments}
+            rebuilt: list[Assessment] = []
+            for spec in specs:
+                existing = by_name.get(spec["name"])
+                rebuilt.append(
+                    Assessment(
+                        name=spec["name"],
+                        weight=spec["weight"],
+                        mark=existing.mark if existing is not None else None,
+                        completed=existing.completed if existing is not None else False,
+                        group=spec["group"],
+                        items=spec["items"],
+                        count_best=spec["count_best"],
+                        item_max=spec["item_max"],
+                    )
+                )
+            student.assessments = rebuilt
+
+    def _sync_plan(self, module: Module) -> None:
+        """Push the plan's shape (weights, M, N, item names) onto all students."""
+        specs = module.plan_item_specs()
+        names = [spec["name"] for spec in specs]
+        duplicates = {n for n in names if names.count(n) > 1}
+        if duplicates:
+            raise ValueError(
+                "Item names would clash: "
+                + ", ".join(sorted(duplicates))
+                + ". Rename one of the assessment types."
+            )
+        self._apply_item_specs(module.students, specs)
+
+    def add_assessment(
+        self,
+        module: Module,
+        name: str,
+        weight: float,
+        items: int = 1,
+        count_best: int | None = None,
+    ) -> None:
+        """Add an assessment TYPE to the plan; students get its M blank items.
+
+        ``items`` is M and ``count_best`` is N (the best N of M count). N defaults
+        to M, which drops nothing — the behaviour that existed before this rule.
+        Raises ValueError on empty/duplicate names, weights outside (0, 1] or an
+        invalid (M, N) pair.
         """
         name = name.strip()
         if not name:
@@ -125,31 +195,54 @@ class DataStore:
             raise ValueError(f"An assessment named '{name}' already exists.")
         if not 0 < weight <= 1:
             raise ValueError("Weight must be between 0% and 100%.")
+        items, count_best = self.validate_type(items, items if count_best is None else count_best)
 
-        module.assessments.append(Assessment(name=name, weight=weight, mark=None, completed=False))
-        for student in module.students:
-            student.assessments.append(
-                Assessment(name=name, weight=weight, mark=None, completed=False)
+        module.assessments.append(
+            Assessment(
+                name=name,
+                weight=weight,
+                mark=None,
+                completed=False,
+                group=name,
+                items=items,
+                count_best=count_best,
             )
+        )
+        self._sync_plan(module)
 
-    def update_assessment(self, module: Module, name: str, weight: float) -> None:
-        """Change a plan weight; kept in sync on every student's record."""
+    def update_assessment(
+        self,
+        module: Module,
+        name: str,
+        weight: float,
+        items: int | None = None,
+        count_best: int | None = None,
+    ) -> None:
+        """Change a type's weight and/or its best-N-of-M setting.
+
+        The plan entry and every student's items are kept in sync; marks survive
+        an item-count change because items are matched by name.
+        """
         if not 0 < weight <= 1:
             raise ValueError("Weight must be between 0% and 100%.")
         plan_entry = module.assessment(name)
         if plan_entry is None:
             raise ValueError(f"No assessment named '{name}'.")
+
+        new_items = plan_entry.items if items is None else items
+        new_count = plan_entry.count_best if count_best is None else count_best
+        new_items, new_count = self.validate_type(new_items, new_count)
+
         plan_entry.weight = weight
-        for student in module.students:
-            entry = module.student_assessment(student, name)
-            if entry is not None:
-                entry.weight = weight
+        plan_entry.items = new_items
+        plan_entry.count_best = new_count
+        plan_entry.group = plan_entry.name
+        self._sync_plan(module)
 
     def delete_assessment(self, module: Module, name: str) -> None:
-        """Remove an assessment from the plan and from every student."""
+        """Remove an assessment TYPE (all of its items) from every student."""
         module.assessments = [a for a in module.assessments if a.name != name]
-        for student in module.students:
-            student.assessments = [a for a in student.assessments if a.name != name]
+        self._sync_plan(module)
 
     # ------------------------------------------------------------------ #
     # Students
@@ -166,8 +259,9 @@ class DataStore:
         if module.student(code) is not None:
             raise ValueError(f"A student with code '{code}' is already enrolled.")
 
+        plan_items = module.plan_items()
         if marks is None:
-            marks = [None] * len(module.assessments)
+            marks = [None] * len(plan_items)
 
         assessments = [
             Assessment(
@@ -175,8 +269,12 @@ class DataStore:
                 weight=plan.weight,
                 mark=mark,
                 completed=mark is not None,
+                group=plan.group,
+                items=plan.items,
+                count_best=plan.count_best,
+                item_max=plan.item_max,
             )
-            for plan, mark in zip(module.assessments, marks)
+            for plan, mark in zip(plan_items, marks)
         ]
         student = Student(student_code=code, assessments=assessments)
         module.students.append(student)
@@ -207,12 +305,17 @@ class DataStore:
 
         student.student_code = new_code
         by_name = {a.name: a for a in student.assessments}
-        for plan, mark in zip(module.assessments, marks):
+        for plan, mark in zip(module.plan_items(), marks):
             entry = by_name.get(plan.name)
             if entry is None:
                 continue
             entry.mark = mark
             entry.completed = mark is not None
+            entry.weight = plan.weight
+            entry.group = plan.group
+            entry.items = plan.items
+            entry.count_best = plan.count_best
+            entry.item_max = plan.item_max
         return student
 
     def delete_student(self, module: Module, code: str) -> None:
@@ -221,12 +324,12 @@ class DataStore:
     def set_assessment_marks(
         self, module: Module, name: str, marks: dict[str, float | None]
     ) -> None:
-        """Bulk-update one assessment's marks across the module's students.
+        """Bulk-update one assessment ITEM's marks across the module's students.
 
         ``marks`` maps student codes to their mark (None = not completed).
-        Raises ValueError if the assessment isn't in the plan.
+        Raises ValueError if the item isn't part of the plan.
         """
-        if module.assessment(name) is None:
+        if module.plan_item(name) is None:
             raise ValueError(f"No assessment named '{name}' in this module's plan.")
         for student in module.students:
             if student.student_code not in marks:
@@ -245,59 +348,140 @@ class DataStore:
     def build_module_from_df(code: str, name: str, df: pd.DataFrame) -> Module:
         """Convert a long-format assessment frame into a populated Module.
 
-        Expected columns (see loader): student_code, assessment_name, weight,
-        mark, completed. Plan weights come from the first occurrence of each
-        assessment; student marks are matched back onto that plan.
+        Required columns (see loader): student_code, assessment_name, weight, mark,
+        completed. Optional columns describe droppable assessment types: ``group``
+        (the type an item belongs to), ``items`` (M) and ``count_best`` (N).
+
+        A file without those columns behaves exactly as before: every assessment
+        is its own type with M = N = 1. Items are matched to a type positionally,
+        in first-appearance order, and take the canonical names the plan generates
+        (``"<Type> 1".."<Type> M"``).
         """
         code = code.strip()
         if not code:
             raise ValueError("Module code cannot be empty.")
 
-        plan_names: list[str] = []
-        plan_weights: dict[str, float] = {}
+        def _clean(value) -> str:
+            if value is None or (isinstance(value, float) and pd.isna(value)):
+                return ""
+            return str(value).strip()
+
+        def _int(value) -> int | None:
+            text = _clean(value)
+            if text == "":
+                return None
+            try:
+                return int(float(text))
+            except (TypeError, ValueError):
+                return None
+
+        has_group = "group" in df.columns
+        has_items = "items" in df.columns
+        has_count_best = "count_best" in df.columns
+        has_item_max = "item_max" in df.columns
+
+        def _float(value, default: float) -> float:
+            text = _clean(value)
+            if text == "":
+                return default
+            try:
+                return float(text)
+            except (TypeError, ValueError):
+                return default
+
+        type_order: list[str] = []
+        type_meta: dict[str, dict] = {}
         for _, row in df.iterrows():
-            an = row["assessment_name"]
-            if an not in plan_weights:
-                plan_names.append(an)
-                plan_weights[an] = float(row["weight"])
+            an = str(row["assessment_name"]).strip()
+            if not an:
+                continue
+            group = _clean(row.get("group")) if has_group else ""
+            type_name = group or an
+            if type_name not in type_meta:
+                type_order.append(type_name)
+                type_meta[type_name] = {
+                    "weight": float(row["weight"]),
+                    "declared_items": _int(row.get("items")) if has_items else None,
+                    "declared_count": _int(row.get("count_best")) if has_count_best else None,
+                    "item_max": _float(row.get("item_max"), 100.0) if has_item_max else 100.0,
+                    "item_names": [],
+                }
+            meta = type_meta[type_name]
+            if an not in meta["item_names"]:
+                meta["item_names"].append(an)
 
         last_row = df.groupby(["student_code", "assessment_name"], as_index=False).tail(1)
         rows_by_student: dict[str, dict[str, tuple[float | None, bool]]] = {}
         for _, row in last_row.iterrows():
-            rows_by_student.setdefault(row["student_code"], {})[row["assessment_name"]] = (
-                None if pd.isna(row["mark"]) or str(row["mark"]).strip() == "" else float(row["mark"]),
+            rows_by_student.setdefault(row["student_code"], {})[str(row["assessment_name"]).strip()] = (
+                None if pd.isna(row["mark"]) or _clean(row["mark"]) == "" else float(row["mark"]),
                 bool(row["completed"]),
             )
 
-        students: list[Student] = []
-        for s_code in sorted(rows_by_student):
-            records = rows_by_student[s_code]
-            assessments = []
-            for an in plan_names:
-                if an in records:
-                    mark, completed = records[an]
-                    assessments.append(
-                        Assessment(name=an, weight=plan_weights[an], mark=mark, completed=completed)
-                    )
-                else:
-                    assessments.append(
-                        Assessment(name=an, weight=plan_weights[an], mark=None, completed=False)
-                    )
-            students.append(Student(student_code=s_code, assessments=assessments))
+        plan_types: list[Assessment] = []
+        for type_name in type_order:
+            meta = type_meta[type_name]
+            items = max(1, meta["declared_items"] or 0, len(meta["item_names"]))
+            count_best = meta["declared_count"] if meta["declared_count"] else items
+            count_best = max(1, min(count_best, items))
+            plan_types.append(
+                Assessment(
+                    name=type_name,
+                    weight=meta["weight"],
+                    mark=None,
+                    completed=False,
+                    group=type_name,
+                    items=items,
+                    count_best=count_best,
+                    item_max=meta["item_max"],
+                )
+            )
 
         module = Module(
             code=code,
             name=name.strip(),
-            assessments=[
-                Assessment(name=an, weight=plan_weights[an], mark=None, completed=False)
-                for an in plan_names
-            ],
-            students=students,
+            assessments=plan_types,
+            students=[],
             config=ClassConfig(
                 pass_threshold=Config.DEFAULT_PASS_THRESHOLD,
                 target_class_average=Config.DEFAULT_TARGET_CLASS_AVERAGE,
             ),
         )
+
+        specs = module.plan_item_specs()
+        source_names: dict[str, list[str]] = {
+            type_name: meta["item_names"] for type_name, meta in type_meta.items()
+        }
+        # (type, item) -> position within the type, so the file's own item labels
+        # can be matched positionally onto the canonical names the plan generates.
+        position_of: dict[tuple[str, str], int] = {}
+        seen_per_type: dict[str, int] = {}
+        for spec in specs:
+            key = (spec["group"], spec["name"])
+            position_of[key] = seen_per_type.get(spec["group"], 0)
+            seen_per_type[spec["group"]] = position_of[key] + 1
+        for s_code in sorted(rows_by_student):
+            records = rows_by_student[s_code]
+            assessments: list[Assessment] = []
+            for spec in specs:
+                source = source_names.get(spec["group"], [])
+                position = position_of[(spec["group"], spec["name"])]
+                original = source[position] if position < len(source) else spec["name"]
+                mark, completed = records.get(original, (None, False))
+                assessments.append(
+                    Assessment(
+                        name=spec["name"],
+                        weight=spec["weight"],
+                        mark=mark,
+                        completed=completed,
+                        group=spec["group"],
+                        items=spec["items"],
+                        count_best=spec["count_best"],
+                        item_max=spec["item_max"],
+                    )
+                )
+            module.students.append(Student(student_code=s_code, assessments=assessments))
+
         return module
 
     def create_module_from_file(
@@ -330,27 +514,39 @@ class DataStore:
     def module_to_dataframe(module: Module) -> pd.DataFrame:
         """Serialise a module back to the long-format frame the loader expects.
 
-        One row per student per plan assessment: student_code, assessment_name,
-        weight, mark, completed. Blank marks are empty strings so an exported
-        file can be imported again unchanged (round-trip).
+        One row per student per plan ITEM: student_code, assessment_name, weight,
+        mark, completed, plus the droppable-type columns group / items /
+        count_best. Blank marks are empty strings so an exported file can be
+        imported again unchanged (round-trip).
         """
+        columns = [
+            "student_code",
+            "assessment_name",
+            "weight",
+            "mark",
+            "completed",
+            "group",
+            "items",
+            "count_best",
+            "item_max",
+        ]
         records = []
         for student in module.students:
-            by_name = {a.name: a for a in student.assessments}
-            for plan in module.assessments:
-                entry = by_name.get(plan.name)
+            for entry in student.assessments:
                 records.append(
                     {
                         "student_code": student.student_code,
-                        "assessment_name": plan.name,
-                        "weight": plan.weight,
-                        "mark": entry.mark if entry is not None and entry.mark is not None else "",
-                        "completed": bool(entry.completed) if entry is not None else False,
+                        "assessment_name": entry.name,
+                        "weight": entry.weight,
+                        "mark": entry.mark if entry.mark is not None else "",
+                        "completed": bool(entry.completed),
+                        "group": entry.group or entry.name,
+                        "items": entry.items,
+                        "count_best": entry.count_best,
+                        "item_max": entry.item_max,
                     }
                 )
-        return pd.DataFrame(
-            records, columns=["student_code", "assessment_name", "weight", "mark", "completed"]
-        )
+        return pd.DataFrame(records, columns=columns)
 
 
 # Single shared instance — see module docstring for the scope this is intended for.

@@ -26,6 +26,7 @@ from backend.algorithms.nlp_weights import (
 )
 from backend.data.store import data_store
 from backend.models.student import Module
+from backend.services.participation import analyse
 
 cohort_bp = Blueprint("cohort", __name__)
 
@@ -44,22 +45,32 @@ def active_module_or_redirect() -> tuple[Module | None, object | None]:
 
 
 def _mark_matrix(module: Module) -> np.ndarray:
-    """Mark matrix (students × plan assessments), 0 for not-yet-completed.
+    """Mark matrix (students × assessment TYPES), 0 for not-yet-completed.
+
+    A type's entry is the student's mark for that type under the best-N-of-M rule
+    (the mean of the marks that currently count), so droppable assessments feed
+    the optimiser the mark it would actually see. Nothing written yet stays 0.
 
     # TODO: confirm against source paper — an assessment the class has not written
     # yet counts as 0 in the class average the objective compares against the
     # target, which pulls the reachable average down. The objective itself is
     # unchanged (Van der Merwe et al., 2018b); only the mark data could arguably be
-    # projected instead. Flagged rather than silently changed.
+    # projected instead. For droppable types the counted mean is used, which is this
+    # artefact's extension and is not described by the paper.
     """
     names = [a.name for a in module.assessments]
     rows = []
     for student in module.students:
-        by_name = {a.name: a for a in student.assessments}
+        participation = analyse(student.assessments)
+        by_type = {t.name: t for t in participation.types}
         row = []
         for name in names:
-            entry = by_name.get(name)
-            row.append(entry.mark if entry is not None and entry.completed else 0.0)
+            type_result = by_type.get(name)
+            row.append(
+                float(type_result.standing)
+                if type_result is not None and type_result.standing is not None
+                else 0.0
+            )
         rows.append(row)
     if not rows:
         return np.zeros((0, len(names)))

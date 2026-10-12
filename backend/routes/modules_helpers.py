@@ -71,7 +71,7 @@ def parse_mark_import_csv(
 
     rows: list[tuple[str, float | None]] = []
     name_set: set[str] = set()
-    plan_names = {a.name for a in module.assessments}
+    plan_names = {a.name for a in module.plan_items()
     for row in rdr:
         name = str(row.get(name_key, "")).strip()
         code = str(row.get(code_key, "")).strip()
@@ -126,7 +126,7 @@ def parse_student_import_csv(
     if code_key is None:
         return [], "CSV must contain a student_code column."
 
-    plan_names = [a.name for a in module.assessments]
+    plan_names = [a.name for a in module.plan_items()]
     seen: dict[str, bool] = {}
     rows: list[dict[str, Any]] = []
     for row in rdr:
